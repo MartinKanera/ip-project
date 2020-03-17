@@ -8,16 +8,6 @@
     private $sec_table = 'mistnosti';
     private $key = '//Secret//super//Secret//';
 
-    public $clovek_id;
-    public $jmeno;
-    public $prijmeni;
-    public $pozice;
-    public $plat;
-    public $mistnost;
-    public $admin;
-    // Foreign key
-    public $mistnost_id;
-
     public function __construct($db) {
       $this->conn = $db;
     }
@@ -77,6 +67,53 @@
       return json_encode(array(
         'message' => 'Wrong username'
       ));
+    }
+
+    public function change_password($id, $old_password, $new_password) {
+      $query = 'SELECT clovek_id, hash FROM ' . $this->table . ' WHERE clovek_id = :id';
+
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->bindParam(':id', $id);
+
+      $stmt->execute();
+
+      if($stmt->rowCount() > 0) {
+        $row = $stmt->fetch();
+        extract($row);
+
+        unset($query, $stmt);
+
+        if(password_verify($old_password, $hash)) {
+          try {
+            // TODO: implement check if new password fulfils all criteria
+
+            $query = 'UPDATE ' . $this->table . ' SET hash = :hash WHERE clovek_id = :id';
+
+            $stmt = $this->conn->prepare($query);
+
+            $new_hash = password_hash($new_password, PASSWORD_BCRYPT, array('cost' => 10));
+            $stmt->bindParam(':hash', $new_hash);
+            $stmt->bindParam(':id', $id);
+
+            $stmt->execute();
+
+            return json_encode(array(
+              'message' => 'Password changed successfully',
+            ));
+
+          } catch (PDOException $e) {
+            return json_encode(array(
+              'message' => $e->getMessage(),
+            ));
+
+          }
+        } else {
+          return json_encode(array(
+              'message' => 'Wrong password provided',
+          ));
+        }
+      }
     }
   } 
 ?>

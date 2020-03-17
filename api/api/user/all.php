@@ -10,28 +10,29 @@
 
   $user = new User($db);
 
-  $result = $user->read();
+  $result = $user->read(
+    $_GET['order_by'] ?? 'jmeno',
+    $_GET['sort'] ?? 'asc'
+  );
 
-  $num = $result->rowCount();
-
-  if($num > 0) {
+  if($result->rowCount() > 0) {
     $users = array();
     while($row = $result->fetch()) {
       extract($row);
 
       $single_user = array(
-        'clovek_id' => $clovek_id,
-        'jmeno' => $jmeno,
-        'prijmeni' => $prijmeni,
-        'mistnost' => $mistnost,
-        'telefon' => $telefon,
-        'pozice' => $pozice,
+        'id' => $clovek_id,
+        'first_name' => $jmeno,
+        'last_name' => $prijmeni,
+        'room' => $mistnost,
+        'telephone' => $telefon,
+        'position' => $pozice,
       );
 
       array_push($users, $single_user);
     }
 
-    echo json_encode($users);
+    echo json_encode($users, 256);
   } else {
     echo json_encode(array(
       'message' => 'No users found'

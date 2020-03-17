@@ -1,10 +1,10 @@
 <?php
   class Database {
-    private $host = 'localhost';
-    private $db_name = 'ip_3';
-    private $username = 'root';
-    private $password = 'mates1053';
-    private $charset = 'utf8mb4';
+    private $host = 
+    private $db_name = 
+    private $username = 
+    private $password = 
+    private $charset = 
     private $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
