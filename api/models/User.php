@@ -1,37 +1,15 @@
 <?php
-  use \Firebase\JWT\JWT;
-  use \Firebase\JWT\SignatureInvalidException;
-
-  class User {
+class User {
     private $conn;
     private $table = 'lide';
     private $sec_table = 'mistnosti';
-    private $key = '//Secret//super//Secret//';
 
     public function __construct($db) {
       $this->conn = $db;
     }
 
-    public function read ($order_by, $sort) {
-      $order_by = in_array(strtolower($order_by), array('jmeno', 'prijmeni', 'mistnost', 'telefon', 'pozice')) ? $order_by : 'jmeno';
-      $sort = in_array(strtolower($sort), array('asc', 'desc')) ? $sort : 'ASC';
-
-      $query = 'SELECT clovek_id, jmeno, prijmeni, nazev as mistnost, telefon, pozice 
-                FROM ' . $this->table  . 
-                ' JOIN '. $this->sec_table .' ON(mistnosti.mistnost_id = lide.mistnost)
-                ORDER BY ' . $order_by . ' ' . $sort;
-
-      $stmt = $this->conn->prepare($query);
-
-      $stmt->execute();
-
-      return $stmt;
-    }
-
-    public function login($username, $password) {
-      require '../../vendor/autoload.php';
-
-      $query = 'SELECT clovek_id, login, hash, admin, jmeno, prijmeni FROM ' . $this->table . ' WHERE login = :login';
+    public function login($username) {
+      $query = 'SELECT clovek_id, hash, admin, jmeno, prijmeni FROM ' . $this->table . ' WHERE login = :login';
 
       $stmt = $this->conn->prepare($query);
 
@@ -39,38 +17,11 @@
 
       $stmt->execute();
       
-      if($stmt->rowCount() > 0) {
-        $row = $stmt->fetch();
-        extract($row);
-
-        if(password_verify($password, $hash)) {
-          session_start();
-          
-          $payload = array(
-            'user_id' => $clovek_id,
-            'first_name' => $jmeno,
-            'last_name' => $prijmeni,
-            'admin' => $admin
-          );
-
-          $jwt =JWT::encode($payload, $this->key);
-
-          return json_encode(array(
-            'message' => 'Login successful',
-            'jwt' => $jwt
-          ));
-        }
-        return json_encode(array(
-          'message' => 'Wrong password'
-        ));
-      }
-      return json_encode(array(
-        'message' => 'Wrong username'
-      ));
+      return $stmt;
     }
 
     public function change_password($id, $old_password, $new_password) {
-      $query = 'SELECT clovek_id, hash FROM ' . $this->table . ' WHERE clovek_id = :id';
+      $query = 'SELECT hash FROM ' . $this->table . ' WHERE clovek_id = :id';
 
       $stmt = $this->conn->prepare($query);
 
@@ -93,6 +44,7 @@
             $stmt = $this->conn->prepare($query);
 
             $new_hash = password_hash($new_password, PASSWORD_BCRYPT, array('cost' => 10));
+
             $stmt->bindParam(':hash', $new_hash);
             $stmt->bindParam(':id', $id);
 
@@ -115,5 +67,75 @@
         }
       }
     }
-  } 
+
+    public function read ($order_by, $sort) {
+      $query = 'SELECT clovek_id, jmeno, prijmeni, nazev as mistnost, telefon, pozice 
+                FROM ' . $this->table  . 
+                ' JOIN '. $this->sec_table .' ON(mistnosti.mistnost_id = lide.mistnost)
+                ORDER BY ' . $order_by . ' ' . $sort;
+
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->execute();
+
+      return $stmt;
+    }
+
+    public function user_card ($id) {
+      $query_employee = 'SELECT jmeno, prijmeni, pozice, plat, mistnosti.nazev as "mistnost", mistnost_id 
+                        FROM ' . $this->table . ' 
+                        JOIN '. $this->sec_table . ' 
+                        ON (mistnosti.mistnost_id = lide.mistnost) 
+                        WHERE clovek_id = :id';
+
+      $query_keys = 'SELECT nazev, mistnost_id 
+                    FROM ' . $this->sec_table . '
+                    JOIN klice 
+                    ON (mistnosti.mistnost_id = klice.mistnost) 
+                    WHERE klice.clovek = :id 
+                    ORDER BY nazev';
+
+      $stmt_employee = $this->conn->prepare($query_employee);
+      $stmt_keys = $this->conn->prepare($query_keys);
+
+      $stmt_employee->bindParam(':id', $id);
+      $stmt_keys->bindParam(':id', $id);
+
+      $stmt_employee->execute();
+      $stmt_keys->execute();
+
+      return array(
+        'stmt_employee' => $stmt_employee,
+        'stmt_keys' => $stmt_keys
+      );
+    }
+
+    public function create ($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin) {
+      $query = 'INSERT INTO ' . $this->table . ' 
+                SET jmeno = :first_name, prijmeni = :last_name, pozice = :position, plat = :salary, mistnost = :room_id, login = :login, hash = :hash, admin = :admin';
+
+      $stmt = $this->conn->prepare($query);
+
+      $first_name = ucfirst($first_name);
+      $last_name = ucfirst($last_name);
+      $position = mb_strtolower($position);
+      $login = mb_strtolower(trim($login));
+      $hash = password_hash($password, PASSWORD_BCRYPT, array('cost' => 10));
+
+      $stmt->bindParam(':first_name', $first_name);
+      $stmt->bindParam(':last_name', $last_name);
+      $stmt->bindParam(':position', $position);
+      $stmt->bindParam(':salary', $salary);
+      $stmt->bindParam(':room_id', $room_id);
+      $stmt->bindParam(':login', $login);
+      $stmt->bindParam(':hash', $hash);
+      $stmt->bindParam(':admin', $admin);
+
+      if($stmt->execute()) {
+        return true;
+      }
+
+      return false;
+    }
+  }
 ?>

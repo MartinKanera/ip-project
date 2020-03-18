@@ -19,6 +19,7 @@
 
     echo $user->change_password($id, $old_password, $new_password);
   } else {
+    http_response_code(401);
     echo json_encode(array(
     'message' => 'Fill all fields',
   ));
