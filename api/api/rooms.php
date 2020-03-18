@@ -46,11 +46,11 @@
 
   $room = new Room($db);
 
-  $result = $room->read($order_by, $sort);
+  $stmt = $room->read($order_by, $sort);
 
-  if($result->rowCount() > 0) {
+  if($stmt->rowCount() > 0) {
     $rooms = array();
-    while($row = $result->fetch()) {
+    while($row = $stmt->fetch()) {
       extract($row);
 
       $single_room = array(

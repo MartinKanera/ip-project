@@ -41,6 +41,16 @@
       return false;
     }
 
+    public function rooms_keys () {
+      $query = 'SELECT nazev, mistnost_id FROM ' . $this->table . ' ORDER BY nazev';
+      
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->execute();
+
+      return $stmt;
+    }
+
     public function room_card ($id) {
       $query_room = 'SELECT cislo, nazev, telefon FROM ' . $this->table .' WHERE mistnost_Id = :id';
       $query_people = 'SELECT prijmeni, jmeno, clovek_id FROM ' . $this->table . ' JOIN ' . $this->sec_table .' ON (mistnost_id = lide.mistnost) WHERE mistnost_Id = :id ORDER BY prijmeni';

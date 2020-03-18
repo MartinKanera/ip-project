@@ -110,7 +110,7 @@ class User {
       );
     }
 
-    public function create ($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin) {
+    public function create ($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id = array()) {
       $query = 'INSERT INTO ' . $this->table . ' 
                 SET jmeno = :first_name, prijmeni = :last_name, pozice = :position, plat = :salary, mistnost = :room_id, login = :login, hash = :hash, admin = :admin';
 
@@ -132,7 +132,36 @@ class User {
       $stmt->bindParam(':admin', $admin);
 
       if($stmt->execute()) {
-        return true;
+        if(!$selected_rooms_id) return true;
+
+        $query = 'SELECT clovek_id FROM ' . $this->table . ' WHERE login = :login';
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':login', $login);
+
+        $stmt->execute();
+
+        $row = $stmt->fetch();
+
+        extract($row);
+
+        $query = 'INSERT INTO klice (clovek, mistnost)
+                  VALUES';
+
+        foreach($selected_rooms_id as $room_id) {
+          $query .= ' ('. $clovek_id .', ' . $room_id .'),';
+        }
+
+        $query = substr($query, 0, strlen($query) - 1);
+
+        $stmt = $this->conn->prepare($query);
+
+        if($stmt->execute()) {
+          return true;
+        } 
+
+        return false;
       }
 
       return false;

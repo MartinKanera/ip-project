@@ -78,6 +78,13 @@
     ["options" => ["min_range" => 0]]
   );
 
+  $selected_rooms_id = filter_input(
+    INPUT_POST,
+    'selected_rooms_id',
+    FILTER_DEFAULT,
+    []
+  );
+
   if(!$first_name || !$last_name || !$position || !$salary || !$room_id || !$login || $password === false || $password === null) {
     http_response_code(400);
     echo json_encode(array(
@@ -96,7 +103,7 @@
     $user = new User($db);
 
     
-    if($user->create($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin)) {
+    if($user->create($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id)) {
       http_response_code(201);
       echo json_encode(array(
         'message' => 'User created successfully'

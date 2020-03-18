@@ -6,7 +6,7 @@
   include_once('../../models/Room.php');
 
   $id = filter_input(
-    INPUT_POST,
+    INPUT_GET,
     'id',
     FILTER_VALIDATE_INT,
     ["options" => ["min_range" => 1]]

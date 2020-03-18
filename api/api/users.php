@@ -46,11 +46,11 @@
 
   $user = new User($db);
 
-  $result = $user->read($order_by, $sort);
+  $stmt = $user->read($order_by, $sort);
 
-  if($result->rowCount() > 0) {
+  if($stmt->rowCount() > 0) {
     $users = array();
-    while($row = $result->fetch()) {
+    while($row = $stmt->fetch()) {
       extract($row);
 
       $single_user = array(
