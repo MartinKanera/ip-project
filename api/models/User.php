@@ -120,7 +120,7 @@ class User {
       $last_name = ucfirst($last_name);
       $position = mb_strtolower($position);
       $login = mb_strtolower(trim($login));
-      $hash = password_hash($password, PASSWORD_BCRYPT, array('cost' => 10));
+      $hash = password_hash(trim($password), PASSWORD_BCRYPT, array('cost' => 10));
 
       $stmt->bindParam(':first_name', $first_name);
       $stmt->bindParam(':last_name', $last_name);
@@ -164,6 +164,62 @@ class User {
         return false;
       }
 
+      return false;
+    }
+
+    public function update ($id, $first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id = array()) {
+      $query = 'UPDATE ' . $this->table . ' 
+                SET jmeno = :first_name, prijmeni = :last_name, pozice = :position, plat = :salary, mistnost = :room_id, login = :login,' . 
+                (!$password ? '' : ' hash = :hash,')
+                . ' admin = :admin WHERE clovek_id = :id';
+
+      $stmt = $this->conn->prepare($query);
+
+      $first_name = ucfirst($first_name);
+      $last_name = ucfirst($last_name);
+      $position = mb_strtolower($position);
+      $login = mb_strtolower(trim($login));
+      $hash = password_hash(trim($password), PASSWORD_BCRYPT, array('cost' => 10));
+
+      $stmt->bindParam(':first_name', $first_name);
+      $stmt->bindParam(':last_name', $last_name);
+      $stmt->bindParam(':position', $position);
+      $stmt->bindParam(':salary', $salary);
+      $stmt->bindParam(':room_id', $room_id);
+      $stmt->bindParam(':login', $login);
+      if($password) $stmt->bindParam(':hash', $hash);
+      $stmt->bindParam(':admin', $admin);
+      $stmt->bindParam(':id', $id);
+
+      if($stmt->execute()) {
+        $query = 'DELETE FROM klice WHERE clovek = :id';
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':id', $id);
+
+        if($stmt->execute()) {
+          $query = 'INSERT INTO klice (clovek, mistnost)
+                  VALUES';
+
+          foreach($selected_rooms_id as $room_id) {
+            $query .= ' ('. $id .', ' . $room_id .'),';
+          }
+
+          $query = substr($query, 0, strlen($query) - 1);
+
+          $stmt = $this->conn->prepare($query);
+
+          if($stmt->execute()) {
+            return true;
+          } 
+
+          return false;
+        }
+
+        return false;
+      }
+      
       return false;
     }
   }

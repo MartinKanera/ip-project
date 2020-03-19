@@ -79,5 +79,22 @@
         'stmt_keys' => $stmt_keys,
       );
     }
+
+    public function update ($id, $number, $name, $telephone) {
+      $query = 'UPDATE ' . $this->table . ' SET cislo = :number, nazev = :name, telefon = :telephone WHERE mistnost_id = :id';
+
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->bindParam(':number', $number);
+      $stmt->bindParam(':name', $name);
+      $stmt->bindParam(':telephone', $telephone);
+      $stmt->bindParam(':id', $id);
+
+      if($stmt->execute()) {
+        return true;
+      }
+
+      return false;
+    }
   }
 ?>
