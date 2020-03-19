@@ -42,7 +42,7 @@
       'room_id' => $mistnost_id
     );
   } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode(array(
       'message' => 'No user info'
     ));
@@ -61,7 +61,7 @@
       ));
     }
   } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode(array(
       'message' => 'No keys info'
     ));

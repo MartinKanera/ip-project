@@ -45,7 +45,7 @@
     $result['name'] = $nazev;
     $result['telephone'] = $telefon;
   } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode(array(
       'message' => 'No room info'
     ));
@@ -63,7 +63,7 @@
       ));
     }
   } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode(array(
       'message' => 'No people info'
     ));
@@ -77,7 +77,7 @@
 
     $result['average'] = $prumer;
   } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode(array(
       'message' => 'No average info'
     ));
@@ -95,7 +95,7 @@
       ));
     }
   } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode(array(
       'message' => 'No keys info'
     ));

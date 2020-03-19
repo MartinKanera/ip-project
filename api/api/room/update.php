@@ -68,10 +68,9 @@
     $room = new Room($db);
 
     if($room->update($id, $number, $name, $telephone)) {
-      echo json_encode(array(
-        'message' => 'Room updated successfully'
-      ));
+      http_response_code(204);
     } else {
+      http_response_code(500);
       echo json_encode(array(
         'message' => 'Room update failed'
       ));

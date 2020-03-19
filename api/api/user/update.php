@@ -112,10 +112,9 @@
 
     
     if($user->update($id, $first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id)) {
-      echo json_encode(array(
-        'message' => 'User updated successfully'
-      ));
+      http_response_code(204);
     } else {
+      http_response_code(500);
       echo json_encode(array(
         'message' => 'Failed to update user'
       ));

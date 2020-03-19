@@ -105,10 +105,8 @@
     
     if($user->create($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id)) {
       http_response_code(201);
-      echo json_encode(array(
-        'message' => 'User created successfully'
-      ));
     } else {
+      http_response_code(500);
       echo json_encode(array(
         'message' => 'Failed to create user'
       ));

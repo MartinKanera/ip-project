@@ -50,21 +50,13 @@ class User {
 
             $stmt->execute();
 
-            return json_encode(array(
-              'message' => 'Password changed successfully',
-            ));
+            return true;
 
           } catch (PDOException $e) {
-            return json_encode(array(
-              'message' => $e->getMessage(),
-            ));
-
+            return false;
           }
-        } else {
-          return json_encode(array(
-              'message' => 'Wrong password provided',
-          ));
-        }
+        } 
+        return false;
       }
     }
 
@@ -220,6 +212,28 @@ class User {
         return false;
       }
       
+      return false;
+    }
+
+    public function delete ($id) {
+      $query = 'DELETE FROM klice WHERE clovek = :id';
+
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->bindParam(':id', $id);
+
+      if($stmt->execute()) {
+        $query = 'DELETE FROM ' . $this->table . ' WHERE clovek_id = :id';
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':id', $id);
+
+        if($stmt->execute()) return true;
+        
+        return false;
+      }
+
       return false;
     }
   }

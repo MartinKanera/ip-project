@@ -96,5 +96,36 @@
 
       return false;
     }
+
+    public function delete ($room_id) {
+      $check_query = 'SELECT clovek_id FROM ' . $this->sec_table . ' WHERE mistnost = :room_id';
+
+      $check_stmt = $this->conn->prepare($check_query);
+
+      $check_stmt->bindParam(':room_id', $room_id);
+
+      $check_stmt->execute();
+
+      if($check_stmt->rowCount() > 0) return false;
+
+      $query = 'DELETE FROM klice WHERE mistnost = :room_id';
+
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->bindParam(':room_id', $room_id);
+
+      if($stmt->execute()) {
+        $query = 'DELETE FROM ' . $this->table . ' WHERE mistnost_id = :room_id';
+
+        $stmt = $this->conn->prepare($query);
+
+        $stmt->bindParam(':room_id', $room_id);
+
+        if($stmt->execute()) return true;
+        
+        return false;
+      }
+      return false;
+    }
   }
 ?>
