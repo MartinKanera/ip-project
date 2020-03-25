@@ -22,26 +22,12 @@
     die();
   }
 
-  $id = filter_input(
-    INPUT_POST,
-    'id',
-    FILTER_VALIDATE_INT,
-    ["options" => ["min_range" => 0]]
-  );
+$json = file_get_contents('php://input');
+$data = json_decode($json)->data;
 
-  $old_password = filter_input(
-    INPUT_POST,
-    'old_password',
-    FILTER_DEFAULT,
-    []
-  );
-
-  $new_password = filter_input(
-    INPUT_POST,
-    'new_password',
-    FILTER_DEFAULT,
-    []
-  );
+$id = filter_var($data->id, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
+$old_password = $data->old_password;
+$new_password = $data->new_password;
 
   if(!$id || !$old_password || !$new_password) {
     http_response_code(400);

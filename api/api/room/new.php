@@ -22,26 +22,12 @@
     die();
   }
 
-  $number = filter_input(
-    INPUT_POST,
-    'number',
-    FILTER_SANITIZE_NUMBER_INT,
-    []
-  );
+  $json = file_get_contents('php://input');
+  $data = json_decode($json)->data;
 
-  $name = filter_input(
-    INPUT_POST,
-    'name',
-    FILTER_DEFAULT,
-    []
-  );
-
-  $telephone = filter_input(
-    INPUT_POST,
-    'telephone',
-    FILTER_SANITIZE_NUMBER_INT,
-    []
-  );
+  $number = filter_var($data->number, FILTER_SANITIZE_NUMBER_INT);
+  $name = $data->name;
+  $telephone = filter_var($data->telephone, FILTER_SANITIZE_NUMBER_INT);
 
   if(!$number || !$name) {
     http_response_code(400);

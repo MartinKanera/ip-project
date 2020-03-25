@@ -22,68 +22,18 @@
     die();
   }
 
-  $first_name = filter_input(
-    INPUT_POST,
-    'first_name',
-    FILTER_DEFAULT,
-    []
-  );
+  $json = file_get_contents('php://input');
+  $data = json_decode($json)->data;
 
-  $last_name = filter_input(
-    INPUT_POST,
-    'last_name',
-    FILTER_DEFAULT,
-    []
-  );
-
-  $position = filter_input(
-    INPUT_POST,
-    'position',
-    FILTER_DEFAULT,
-    []
-  );
-
-  $salary = filter_input(
-    INPUT_POST,
-    'salary',
-    FILTER_SANITIZE_NUMBER_INT,
-    []
-  );
-
-  $room_id = filter_input(
-    INPUT_POST,
-    'room_id',
-    FILTER_VALIDATE_INT,
-    ["options" => ["min_range" => 0]]
-  );
-
-  $login = filter_input(
-    INPUT_POST,
-    'login',
-    FILTER_DEFAULT,
-    []
-  );
-
-  $password = filter_input(
-    INPUT_POST,
-    'password',
-    FILTER_DEFAULT,
-    []
-  );
-
-  $admin = filter_input(
-    INPUT_POST,
-    'admin',
-    FILTER_VALIDATE_INT,
-    ["options" => ["min_range" => 0]]
-  );
-
-  $selected_rooms_id = filter_input(
-    INPUT_POST,
-    'selected_rooms_id',
-    FILTER_DEFAULT,
-    []
-  );
+  $first_name = filter_var($data->first_name);
+  $last_name = filter_var($data->last_name);
+  $position  = filter_var($data->position);
+  $salary = filter_var($data->salary, FILTER_SANITIZE_NUMBER_INT);
+  $room_id = filter_var($data->room_id, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
+  $login = filter_var($data->login);
+  $password = filter_var($data->password);
+  $admin = filter_var($data->admin, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0, "max_range" => 1]]);
+  $selected_rooms_id = filter_var($data->selected_rooms_id);
 
   if(!$first_name || !$last_name || !$position || !$salary || !$room_id || !$login || $password === false || $password === null) {
     http_response_code(400);

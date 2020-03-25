@@ -22,12 +22,10 @@
     die();
   }
 
-  $id = filter_input(
-    INPUT_POST,
-    'id',
-    FILTER_VALIDATE_INT,
-    ["options" => ["min_range" => 0]]
-  );
+  $json = file_get_contents('php://input');
+  $data = json_decode($json)->data;
+
+  $id = filter_var($data->id, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
   
   if(!$id) {
     http_response_code(400);

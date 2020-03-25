@@ -15,23 +15,11 @@
     return in_array(strtolower($sort_value), $valid) ? $sort_value : false;
   }
 
-  $order_by = filter_input(
-    INPUT_GET,
-    'order_by',
-    FILTER_CALLBACK,
-    array(
-      "options" => "order_valid"
-    )
-  );
-
-  $sort = filter_input(
-    INPUT_GET,
-    'sort',
-    FILTER_CALLBACK,
-    array(
-      "options" => "sort_valid"
-    )
-  );
+  $json = file_get_contents('php://input');
+  $data = json_decode($json)->data;
+  
+  $order_by = filter_var($data->order_by, FILTER_CALLBACK, array("options" => "order_valid"));
+  $order_by = filter_var($data->sort, FILTER_CALLBACK, array("options" => "sort_valid"));
 
   if(!$order_by) {
     $order_by = 'nazev';

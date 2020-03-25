@@ -17,19 +17,11 @@
 
   $key = '//Secret//super//Secret//';
 
-  $login = filter_input(
-    INPUT_POST,
-    'login',
-    FILTER_DEFAULT,
-    []
-  );
+  $json = file_get_contents('php://input');
+  $data = json_decode($json)->data;
 
-  $password = filter_input(
-    INPUT_POST,
-    'password',
-    FILTER_DEFAULT,
-    []
-  );
+  $login = $data->login;
+  $password = $data->password;
 
   if(!$login || !$password) {
     http_response_code(400);
