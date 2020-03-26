@@ -1,16 +1,19 @@
 <template>
   <div>
-    <v-overlay color="black" absolute opacity="1" :value="loading">
-      <v-progress-circular size="40" color="secondary" indeterminate></v-progress-circular>
+    <v-overlay color="black" opacity="1" :value="loading">
+      <v-progress-circular z-index="200" size="40" color="secondary" indeterminate></v-progress-circular>
     </v-overlay>
   </div>
 </template>
 
+<style lang="sass">
+</style>
+
 <script lang="ts">
 import { defineComponent, ref, onMounted } from '@vue/composition-api';
-import axios from 'axios';
 
 export default defineComponent({
+  layout: 'browser',
   setup(_, context) {
     const loading = ref(true);
 

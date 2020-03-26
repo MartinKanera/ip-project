@@ -48,4 +48,7 @@ export const actions: ActionTree<RootState, RootState> = {
   }
 };
 
-export const getters = () => {};
+export const getters: GetterTree<RootState, RootState> = {
+  fullName: (state) => `${state.firstName} ${state.lastName}`,
+  userId: (state) => state.id
+};

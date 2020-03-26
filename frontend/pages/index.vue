@@ -73,18 +73,8 @@ export default defineComponent({
 
         localStorage.setItem('jwt', data.jwt);
 
-        const { user_id, first_name, last_name, admin } = data.user;
-
-        context.root.$store.commit('HYDRATE', {
-          id: user_id,
-          firstName: first_name,
-          lastName: last_name,
-          isAdmin: admin
-        });
-
         context.root.$root.$router.push('/users');
       } catch (e) {
-        console.log(e);
         error.value = 'Login or password is incorrect';
         snackbar.value = true;
       }

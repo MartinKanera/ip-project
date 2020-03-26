@@ -6,7 +6,7 @@
       </v-toolbar>
     </div>
     <v-content>
-      <v-container class="container-auth pa-5 mt-5" fluid>
+      <v-container class="pa-5 mt-5" fluid>
         <v-row no-gutters justify="center" align="center" class="min-h-screen">
           <v-sheet
             width="512"
