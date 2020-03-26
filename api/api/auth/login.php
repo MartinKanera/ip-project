@@ -52,7 +52,8 @@
 
         echo json_encode(array(
           'message' => 'Login successful',
-          'jwt' => $jwt
+          'jwt' => $jwt,
+          'user' => $payload
         ));
       } else {
         http_response_code(400);

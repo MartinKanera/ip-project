@@ -53,8 +53,10 @@ const config: Configuration = {
     '@nuxtjs/pwa',
     // Doc: https://github.com/nuxt-community/dotenv-module
     '@nuxtjs/dotenv',
-    '@nuxtjs/proxy'
+    '@nuxtjs/proxy',
+    'cookie-universal-nuxt'
   ],
+
   /*
    ** Axios module configuration
    ** See https://axios.nuxtjs.org/options
@@ -63,8 +65,7 @@ const config: Configuration = {
   /*
    ** vuetify module configuration
    ** https://github.com/nuxt-community/vuetify-module
-   */
-  vuetify: {
+   */ vuetify: {
     customVariables: ['~/assets/variables.scss'],
     theme: {
       dark: true,

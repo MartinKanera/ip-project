@@ -1,77 +1,122 @@
 <template>
-  <div class="login-wrap">
-    <v-card class="login" color="secondary" flat>
-      <form>
+  <v-form
+    ref="form"
+    :class="$vuetify.breakpoint.name !== 'xs' ? 'relative' : ''"
+    class="pa-4 pa-sm-8"
+    lazy-validation
+  >
+    <v-row no-gutters justify="center" align="center">
+      <v-col class="pa-0" cols="12">
+        <h1 class="title font-weight-bold text-center mt-8">Please log in</h1>
         <v-text-field
           v-model="username"
-          class="mb-6"
-          :counter="12"
-          label="Login"
+          class="mt-4"
+          label="LOGIN"
+          color="accent"
+          type="text"
+          validate-on-blur
           required
         ></v-text-field>
         <v-text-field
           v-model="password"
-          class="mb-6"
-          label="Password"
+          class="mt-4"
+          label="PASSWORD"
+          color="accent"
           type="password"
           required
         ></v-text-field>
-        <v-btn class="custom-btn" color="accent" @click="login">Login</v-btn>
-      </form>
-    </v-card>
-  </div>
+        <v-btn class="mt-8 normal-case" color="accent" @click="login" block>Log in</v-btn>
+      </v-col>
+    </v-row>
+    <v-overlay color="black" absolute opacity="0.65" :value="loading">
+      <v-progress-circular size="40" color="secondary" indeterminate></v-progress-circular>
+    </v-overlay>
+    <v-snackbar
+      v-model="snackbar"
+      color="red"
+      :timeout="2000"
+      :vertical="$vuetify.breakpoint.name === 'xs'"
+    >
+      <div>{{ error }}</div>
+      <v-btn icon @click="snackbar = false"></v-btn>
+    </v-snackbar>
+  </v-form>
 </template>
 
-<style lang="sass" scoped>
-.login-wrap
-  width: 33%
-  margin: auto
-
-  .login
-    padding: 50px
-    width: 100%
-</style>
-
-<style scoped>
-@media only screen and (max-width: 978px) {
-  .login-wrap {
-    width: 75%;
-  }
-}
-</style>
-
 <script lang="ts">
-import { defineComponent, reactive, ref } from '@vue/composition-api';
+import { defineComponent, ref, onMounted } from '@vue/composition-api';
 import axios from 'axios';
 
 export default defineComponent({
-  setup() {
+  setup(_, context) {
     const username = ref('');
     const password = ref('');
-    const idk = ref(null);
+    const loading = ref(false);
+    const snackbar = ref(false);
+    const error = ref('Your session has expired');
 
     async function login() {
+      loading.value = true;
+
       try {
         const response = await axios.post(
-          'http://a2017kanema.delta-studenti.cz/api/auth/login.php',
+          process.env.API_URL + '/api/auth/login.php',
           {
             data: {
-              login: 'franta',
-              password: 'Heslo123'
+              login: username.value,
+              password: password.value
             }
           }
         );
 
-        console.log(response.data);
+        const data = await response.data;
+
+        localStorage.setItem('jwt', data.jwt);
+
+        const { user_id, first_name, last_name, admin } = data.user;
+
+        context.root.$store.commit('HYDRATE', {
+          id: user_id,
+          firstName: first_name,
+          lastName: last_name,
+          isAdmin: admin
+        });
+
+        context.root.$root.$router.push('/users');
       } catch (e) {
         console.log(e);
+        error.value = 'Login or password is incorrect';
+        snackbar.value = true;
       }
+
+      loading.value = false;
     }
+
+    onMounted(async () => {
+      const jwt = localStorage.getItem('jwt') ?? false;
+
+      if (jwt) {
+        try {
+          loading.value = true;
+          await context.root.$store.dispatch('fetchUserData', jwt);
+
+          context.root.$root.$router.push('/users');
+        } catch (e) {
+          loading.value = false;
+          snackbar.value = true;
+
+          localStorage.removeItem('jwt');
+        }
+      }
+    });
 
     return {
       login,
       username,
-      password
+      password,
+      snackbar,
+      loading,
+      error
     };
   }
 });
