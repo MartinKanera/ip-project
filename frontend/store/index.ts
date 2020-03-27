@@ -50,5 +50,6 @@ export const actions: ActionTree<RootState, RootState> = {
 
 export const getters: GetterTree<RootState, RootState> = {
   fullName: (state) => `${state.firstName} ${state.lastName}`,
-  userId: (state) => state.id
+  userId: (state) => state.id,
+  isAdmin: (state) => state.isAdmin
 };

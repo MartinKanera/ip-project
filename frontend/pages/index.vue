@@ -48,7 +48,7 @@ import { defineComponent, ref, onMounted } from '@vue/composition-api';
 import axios from 'axios';
 
 export default defineComponent({
-  setup(_, context) {
+  setup(_, setupContext) {
     const username = ref('');
     const password = ref('');
     const loading = ref(false);
@@ -73,7 +73,7 @@ export default defineComponent({
 
         localStorage.setItem('jwt', data.jwt);
 
-        context.root.$root.$router.push('/users');
+        setupContext.root.$root.$router.push('/users');
       } catch (e) {
         error.value = 'Login or password is incorrect';
         snackbar.value = true;
@@ -88,9 +88,9 @@ export default defineComponent({
       if (jwt) {
         try {
           loading.value = true;
-          await context.root.$store.dispatch('fetchUserData', jwt);
+          await setupContext.root.$store.dispatch('fetchUserData', jwt);
 
-          context.root.$root.$router.push('/users');
+          setupContext.root.$root.$router.push('/users');
         } catch (e) {
           loading.value = false;
           snackbar.value = true;

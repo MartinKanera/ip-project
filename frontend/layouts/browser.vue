@@ -10,12 +10,11 @@
         v-model="drawer"
         app
         right
-        clipped
         dark
         floating
+        :temporary="true"
         width="300px"
         color="secondary"
-        :permanent="computer"
       >
         <v-list style="margin-top: 65px">
           <v-list-item>
@@ -113,19 +112,12 @@
 </template>
 
 <script lang="ts">
-import {
-  defineComponent,
-  ref,
-  watchEffect,
-  onMounted,
-  computed
-} from '@vue/composition-api';
+import { defineComponent, ref, watchEffect } from '@vue/composition-api';
 import axios from 'axios';
 
 export default defineComponent({
   setup(_, setupContext) {
     const fullName = ref('');
-    const computer = ref(false);
     const drawer = ref(false);
     const overlay = ref(false);
     const chagePasswordOverlay = ref(false);
@@ -138,15 +130,6 @@ export default defineComponent({
 
     watchEffect(() => {
       fullName.value = setupContext.root.$store.getters.fullName;
-    });
-
-    function onResize() {
-      computer.value = window.innerWidth >= 1264;
-    }
-
-    onMounted(() => {
-      window.addEventListener('resize', onResize), { passive: true };
-      computer.value = window.innerWidth >= 1264;
     });
 
     function signOut() {
@@ -204,7 +187,6 @@ export default defineComponent({
       fullName,
       signOut,
       drawer,
-      computer,
       openDrawer,
       overlay,
       openSettings,
