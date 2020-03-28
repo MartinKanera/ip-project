@@ -35,6 +35,7 @@
                           color="accent"
                           v-model="editedItem.first_name"
                           label="First name"
+                          required
                         ></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="4">
@@ -42,20 +43,54 @@
                           color="accent"
                           v-model="editedItem.last_name"
                           label="Last name"
+                          required
                         ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field color="accent" v-model="editedItem.room" label="Room"></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="4">
                         <v-text-field
                           color="accent"
-                          v-model="editedItem.telephone"
-                          label="Telephone"
+                          required
+                          v-model="editedItem.position"
+                          label="Positon"
                         ></v-text-field>
                       </v-col>
                       <v-col cols="12" sm="6" md="4">
-                        <v-text-field color="accent" v-model="editedItem.position" label="Positon"></v-text-field>
+                        <v-select
+                          :items="rooms"
+                          label="Room"
+                          dense
+                          v-model="editedItem.text"
+                          color="accent"
+                          item-color="accent"
+                          required
+                        ></v-select>
+                      </v-col>
+                      <v-col cols="12" sm="6" md="4">
+                        <v-text-field
+                          color="accent"
+                          required
+                          v-model="editedItem.login"
+                          label="Login"
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12" sm="6" md="4">
+                        <v-text-field
+                          type="password"
+                          color="accent"
+                          v-model="editedItem.password"
+                          label="Password"
+                        ></v-text-field>
+                      </v-col>
+                    </v-row>
+                    <v-row>
+                      <v-col cols="6" v-for="(room, index) in rooms">
+                        <v-checkbox
+                          color="accent"
+                          v-model="editedItem.selectedKeys"
+                          :value="room.room_id"
+                          :label="room.text"
+                          :key="index"
+                        ></v-checkbox>
                       </v-col>
                     </v-row>
                   </v-container>
@@ -100,19 +135,14 @@
 </style>
 
 <script lang="ts">
-import {
-  defineComponent,
-  ref,
-  onMounted,
-  onBeforeMount,
-  watchEffect
-} from '@vue/composition-api';
+import { defineComponent, ref, watchEffect } from '@vue/composition-api';
 import axios from 'axios';
+
+// TODO: editedItem type
 
 export default defineComponent({
   layout: 'browser',
   setup(_, setupContext) {
-    const loading = ref(true);
     const headers = ref([
       {
         text: 'First name',
@@ -140,17 +170,34 @@ export default defineComponent({
         sortable: false
       }
     ]);
-    const users = ref([]);
+    const loading = ref(true);
     const editedItem = ref({
-      firstName: '',
-      lastName: '',
-      room: 0,
-      telephone: 0,
-      position: ''
+      id: 0,
+      first_name: '',
+      last_name: '',
+      text: '',
+      room_id: 0,
+      position: '',
+      admin: 0,
+      login: '',
+      password: '',
+      selectedKeys: [] as Number[]
     });
     const dialog = ref(false);
     const isAdmin = ref(false);
     const tableLoading = ref(true);
+    const users = ref([]);
+    const rooms = ref([]);
+    const keys = ref([]);
+    const selectValue = ref('');
+
+    watchEffect(() => {
+      editedItem.value.room_id = rooms.value.find(
+        (room) => room.text == editedItem.value.text
+      )?.room_id;
+    });
+
+    watchEffect(() => console.log(editedItem.value.selectedKeys));
 
     (async () => {
       const jwt = localStorage.getItem('jwt') ?? false;
@@ -166,23 +213,50 @@ export default defineComponent({
       } else {
         setupContext.root.$root.$router.replace('/');
       }
+
       loading.value = false;
 
       isAdmin.value = setupContext.root.$store.getters.isAdmin;
 
       try {
-        const response = await axios.get(
-          process.env.API_URL + '/api/users.php'
-        );
-        users.value = response.data;
+        const response = await axios({
+          method: 'get',
+          url: process.env.API_URL + '/api/users.php',
+          headers: {
+            Authorization: `Bearer ${jwt}`
+          }
+        });
+
+        const data = response.data;
+
+        users.value = data.users;
+        rooms.value = data.rooms;
+        keys.value = data.keys;
       } catch (e) {}
 
       tableLoading.value = false;
     })();
 
-    function editItemDialog(item) {
-      editedItem.value = item;
+    function editItemDialog(user) {
+      editedItem.value = {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        text: user.room,
+        position: user.position,
+        room_id: user.room_id,
+        login: user.login,
+        admin: user.admin, //This is int
+        password: '',
+        selectedKeys: keys.value
+          .filter(
+            (key: { user_id: number; room_id: number }) =>
+              key.user_id == user.id
+          )
+          .map((key: { user_id: number; room_id: number }) => key.room_id)
+      };
       dialog.value = true;
+      console.log(editedItem.value.selectedKeys);
     }
 
     return {
@@ -193,7 +267,10 @@ export default defineComponent({
       dialog,
       editItemDialog,
       isAdmin,
-      tableLoading
+      tableLoading,
+      rooms,
+      keys,
+      selectValue
     };
   }
 });
