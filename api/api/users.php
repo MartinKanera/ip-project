@@ -1,6 +1,10 @@
 <?php
   header('Access-Control-Allow-Origin: *');
   header('Content-Type: application/json');
+  header('Access-Control-Allow-Headers: Access-Control-Allow-Headers, Content-Type, Access-Control-Allow-methods, Authorization');
+
+
+  
 
   function order_valid ($order_value) {
     $valid = array('jmeno', 'prijmeni', 'mistnost', 'telefon', 'pozice');
@@ -13,18 +17,10 @@
   }
 
   $json = file_get_contents('php://input');
-  $data = json_decode($json)->data;
-  
+  $data = json_decode($json)->data ?? (object) array('order_by' => 'jmeno', 'sort' => 'asc');
+
   $order_by = filter_var($data->order_by, FILTER_CALLBACK, array("options" => "order_valid"));
-  $order_by = filter_var($data->sort, FILTER_CALLBACK, array("options" => "sort_valid"));
-
-  if(!$order_by) {
-    $order_by = 'jmeno';
-  }
-
-  if(!$sort) {
-    $sort = 'asc';
-  }
+  $sort = filter_var($data->sort, FILTER_CALLBACK, array("options" => "sort_valid"));
 
   include_once('../config/Database.php');
   include_once('../models/User.php');
@@ -34,11 +30,15 @@
 
   $user = new User($db);
 
-  $stmt = $user->read($order_by, $sort);
+  $stmts = $user->read($order_by, $sort);
+  $result = array(
+    'users' => array(),
+    'rooms' => array(),
+    'keys' => array(),
+  );
 
-  if($stmt->rowCount() > 0) {
-    $users = array();
-    while($row = $stmt->fetch()) {
+  if($stmts['stmt']->rowCount() > 0) {
+    while($row = $stmts['stmt']->fetch()) {
       extract($row);
 
       $single_user = array(
@@ -48,16 +48,55 @@
         'room' => $mistnost,
         'telephone' => $telefon,
         'position' => $pozice,
+        'salary' => $plat,
+        'login' => $login,
+        'admin' => $admin
       );
 
-      array_push($users, $single_user);
+      array_push($result['users'], $single_user);
     }
-
-    echo json_encode($users, 256);
   } else {
     http_response_code(404);
     echo json_encode(array(
       'message' => 'No users found'
     ));
   }
+
+  if($stmts['stmt_rooms']->rowCount() > 0) {
+    while($row = $stmts['stmt_rooms']->fetch()) {
+      extract($row);
+
+      $single_room = array(
+        'room_id' => $mistnost_id,
+        'text' => $mistnost
+      );
+
+      array_push($result['rooms'], $single_room);
+    }
+  } else {
+    http_response_code(404);
+    echo json_encode(array(
+      'message' => 'No rooms found'
+    ));
+  }
+
+  if($stmts['stmt_keys']->rowCount() > 0) {
+    while($row = $stmts['stmt_keys']->fetch()) {
+      extract($row);
+
+      $single_key = array(
+        'user_id' => $clovek,
+        'room_id' => $mistnost
+      );
+
+      array_push($result['keys'], $single_key);
+    }
+  } else {
+    http_response_code(404);
+    echo json_encode(array(
+      'message' => 'No keys found'
+    ));
+  }
+
+  echo json_encode($result, 256);
 ?>

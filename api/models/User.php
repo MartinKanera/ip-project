@@ -61,16 +61,28 @@ class User {
     }
 
     public function read ($order_by, $sort) {
-      $query = 'SELECT clovek_id, jmeno, prijmeni, nazev as mistnost, telefon, pozice 
+      $query = 'SELECT clovek_id, jmeno, prijmeni, plat, login, admin, nazev, mistnost_id as mistnost, telefon, pozice
                 FROM ' . $this->table  . 
                 ' JOIN '. $this->sec_table .' ON(mistnosti.mistnost_id = lide.mistnost)
                 ORDER BY ' . $order_by . ' ' . $sort;
 
+      $query_rooms = 'SELECT mistnost_id, nazev as mistnost FROM ' . $this->sec_table;
+
+      $query_keys = 'SELECT clovek, mistnost FROM klice';
+
       $stmt = $this->conn->prepare($query);
+      $stmt_rooms = $this->conn->prepare($query_rooms);
+      $stmt_keys = $this->conn->prepare($query_keys);
 
       $stmt->execute();
+      $stmt_rooms->execute();
+      $stmt_keys->execute();
 
-      return $stmt;
+      return array(
+        'stmt' => $stmt,
+        'stmt_rooms' => $stmt_rooms,
+        'stmt_keys' => $stmt_keys
+      );
     }
 
     public function user_card ($id) {
