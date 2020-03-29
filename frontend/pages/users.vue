@@ -143,7 +143,15 @@
             <td>
               <v-content justify="center" align="center">
                 <v-icon v-if="isAdmin" small class="mr-2" @click="editItemDialog(item)">mdi-pencil</v-icon>
-                <v-icon v-if="isAdmin" small class="mr-2">mdi-delete</v-icon>
+                <v-icon
+                  v-if="isAdmin"
+                  small
+                  class="mr-2"
+                  @click="() => {
+                  selectedUserId = item.id
+                  deleteDialog = true;
+                  }"
+                >mdi-delete</v-icon>
                 <nuxt-link :to="'/user?id=' + item.id">
                   <v-icon small>mdi-folder-information</v-icon>
                 </nuxt-link>
@@ -153,6 +161,17 @@
         </template>
       </v-data-table>
     </v-container>
+    <v-dialog v-model="deleteDialog" max-width="310">
+      <v-card>
+        <v-card-title class="headline" style="margin-left: -5px">Delete user?</v-card-title>
+        <v-card-actions>
+          <v-btn color="accent" text @click="deleteDialog = false">Don't delete user</v-btn>
+          <v-spacer></v-spacer>
+
+          <v-btn color="red" text @click="deleteUser">Delete user</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -260,6 +279,8 @@ export default defineComponent({
     const rooms: Ref<Array<Room>> = ref([]);
     const keys = ref([]);
     const selectValue = ref('');
+    const selectedUserId = ref(0);
+    const deleteDialog = ref(false);
 
     watchEffect(() => {
       editedItem.value.room_id = rooms.value.find(
@@ -267,7 +288,9 @@ export default defineComponent({
       )?.room_id;
     });
 
-    async function fetchUsers(jwt) {
+    async function fetchUsers(jwt: string) {
+      tableLoading.value = true;
+
       try {
         const response = await axios({
           method: 'get',
@@ -306,7 +329,7 @@ export default defineComponent({
 
       isAdmin.value = setupContext.root.$store.getters.isAdmin;
 
-      fetchUsers(jwt);
+      if (jwt) fetchUsers(jwt);
     })();
 
     function editItemDialog(user: User) {
@@ -351,8 +374,32 @@ export default defineComponent({
 
         dialog.value = false;
 
-        fetchUsers(jwt);
+        if (jwt) fetchUsers(jwt);
       } else valid.value = false;
+    }
+
+    async function deleteUser() {
+      try {
+        console.log(selectedUserId.value);
+
+        const jwt = localStorage.getItem('jwt');
+        await axios({
+          method: 'POST',
+          url: process.env.API_URL + '/api/user/delete.php',
+          headers: {
+            Authorization: `Bearer ${jwt}`
+          },
+          data: {
+            data: { id: selectedUserId.value }
+          }
+        });
+
+        deleteDialog.value = false;
+
+        if (jwt) fetchUsers(jwt);
+      } catch (e) {
+        console.log('Something went wrong');
+      }
     }
 
     //RULES
@@ -376,8 +423,14 @@ export default defineComponent({
       selectValue,
       saveChanges,
       nameRules,
-      valid
+      valid,
+      deleteUser,
+      selectedUserId,
+      deleteDialog
     };
+  },
+  head: {
+    title: 'Users'
   }
 });
 </script>

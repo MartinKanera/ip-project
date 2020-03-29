@@ -108,6 +108,9 @@ export default defineComponent({
       loading,
       error
     };
+  },
+  head: {
+    title: 'Login'
   }
 });
 </script>
