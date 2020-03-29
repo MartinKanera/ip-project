@@ -171,7 +171,7 @@ class User {
       return false;
     }
 
-    public function update ($id, $first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id = array()) {
+    public function update ($id, $first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id) {
       $query = 'UPDATE ' . $this->table . ' 
                 SET jmeno = :first_name, prijmeni = :last_name, pozice = :position, plat = :salary, mistnost = :room_id, login = :login,' . 
                 (!$password ? '' : ' hash = :hash,')
@@ -203,22 +203,25 @@ class User {
         $stmt->bindParam(':id', $id);
 
         if($stmt->execute()) {
-          $query = 'INSERT INTO klice (clovek, mistnost)
-                  VALUES';
+          if(count($selected_rooms_id) > 0) {
+            $query = 'INSERT INTO klice (clovek, mistnost) VALUES';
 
-          foreach($selected_rooms_id as $room_id) {
-            $query .= ' ('. $id .', ' . $room_id .'),';
-          }
+            $count = count($selected_rooms_id);
+            foreach($selected_rooms_id as $index => $room_id) {
+              $query .= ' ('. $id .', ' . $room_id .')' . ($count - 1 == $index ? '' : ',');
+            }
 
-          $query = substr($query, 0, strlen($query) - 1);
+            $stmt = $this->conn->prepare($query);
 
-          $stmt = $this->conn->prepare($query);
+            if($stmt->execute()) {
+              return true;
+            } 
 
-          if($stmt->execute()) {
+            return false;
+
+          } else {
             return true;
-          } 
-
-          return false;
+          }
         }
 
         return false;

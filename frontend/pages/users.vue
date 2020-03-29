@@ -114,7 +114,7 @@
                       <v-col md="4" v-for="(room, index) in rooms">
                         <v-checkbox
                           color="accent"
-                          v-model="editedItem.selectedKeys"
+                          v-model="editedItem.selected_rooms_id"
                           :value="room.room_id"
                           :label="room.text"
                           :key="index"
@@ -182,7 +182,7 @@ export type EditedItem = {
   admin: number;
   login: string;
   password: string;
-  selectedKeys: Number[];
+  selected_rooms_id: Number[];
   salary: number;
 };
 
@@ -196,7 +196,7 @@ export type User = {
   admin: number;
   login: string;
   password: string;
-  selectedKeys: Number[];
+  selected_rooms_id: Number[];
   salary: number;
 };
 
@@ -251,7 +251,7 @@ export default defineComponent({
       admin: 0,
       login: '',
       password: '',
-      selectedKeys: []
+      selected_rooms_id: []
     });
     const dialog = ref(false);
     const isAdmin = ref(false);
@@ -266,6 +266,26 @@ export default defineComponent({
         (room: Room) => room.text == editedItem.value.text
       )?.room_id;
     });
+
+    async function fetchUsers(jwt) {
+      try {
+        const response = await axios({
+          method: 'get',
+          url: process.env.API_URL + '/api/users.php',
+          headers: {
+            Authorization: `Bearer ${jwt}`
+          }
+        });
+
+        const data = response.data;
+
+        users.value = data.users;
+        rooms.value = data.rooms;
+        keys.value = data.keys;
+
+        tableLoading.value = false;
+      } catch (e) {}
+    }
 
     (async () => {
       const jwt = localStorage.getItem('jwt') ?? false;
@@ -286,23 +306,7 @@ export default defineComponent({
 
       isAdmin.value = setupContext.root.$store.getters.isAdmin;
 
-      try {
-        const response = await axios({
-          method: 'get',
-          url: process.env.API_URL + '/api/users.php',
-          headers: {
-            Authorization: `Bearer ${jwt}`
-          }
-        });
-
-        const data = response.data;
-
-        users.value = data.users;
-        rooms.value = data.rooms;
-        keys.value = data.keys;
-      } catch (e) {}
-
-      tableLoading.value = false;
+      fetchUsers(jwt);
     })();
 
     function editItemDialog(user: User) {
@@ -317,7 +321,7 @@ export default defineComponent({
         login: user.login,
         admin: user.admin, //This is int
         password: '',
-        selectedKeys: keys.value
+        selected_rooms_id: keys.value
           .filter((key: Key) => key.user_id == user.id)
           .map((key: Key) => key.room_id)
       };
@@ -328,34 +332,26 @@ export default defineComponent({
     async function saveChanges() {
       // @ts-ignore
       if ((setupContext.refs.form as VForm).validate()) {
-        // try {
-        //   const response = await axios({
-        //     method: 'POST',
-        //     url: process.env.API_URL + '/api/user/update.php',
-        //     headers: {
-        //       Authorization: `Bearer ${localStorage.getItem('jwt')}`
-        //     },
-        //     data: {
-        //       data: editedItem.value
-        //     }
-        //   });
-        //   console.log(response.data);
-        // } catch (e) {
-        //   console.error(response.data);
-        // }
-        const response = await axios({
-          method: 'POST',
-          url: process.env.API_URL + '/api/user/update.php',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('jwt')}`
-          },
-          data: {
-            data: editedItem.value
-          }
-        });
-        console.log(response);
+        const jwt = localStorage.getItem('jwt');
+
+        try {
+          const response = await axios({
+            method: 'POST',
+            url: process.env.API_URL + '/api/user/update.php',
+            headers: {
+              Authorization: `Bearer ${jwt}`
+            },
+            data: {
+              data: editedItem.value
+            }
+          });
+        } catch (e) {
+          console.log('Failed to update user');
+        }
 
         dialog.value = false;
+
+        fetchUsers(jwt);
       } else valid.value = false;
     }
 

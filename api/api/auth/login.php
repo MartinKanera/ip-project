@@ -4,11 +4,13 @@
   header('Accesss-Control-Allow-Methods: POST');
   header('Access-Control-Allow-Headers: aplication/json');
 
-  include_once('../../config/Database.php');
-  include_once('../../models/User.php');
+
+  include_once('../../config/database.php');
+  include_once('../../models/user.php');
 
   require '../../vendor/autoload.php';
   use \Firebase\JWT\JWT;
+  use \Firebase\JWT\SignatureInvalidException;
 
   $database = new Database();
   $db = $database->connect();
@@ -18,6 +20,11 @@
   $key = '//Secret//super//Secret//';
 
   $json = file_get_contents('php://input');
+  if($json == null) {
+    json_encode('ffs');
+    die();
+  }
+
   $data = json_decode($json)->data;
 
   $login = $data->login;

@@ -22,8 +22,8 @@
   $order_by = filter_var($data->order_by, FILTER_CALLBACK, array("options" => "order_valid"));
   $sort = filter_var($data->sort, FILTER_CALLBACK, array("options" => "sort_valid"));
 
-  include_once('../config/Database.php');
-  include_once('../models/User.php');
+  include_once('../config/database.php');
+  include_once('../models/user.php');
 
   $database = new Database();
   $db = $database->connect();
@@ -45,7 +45,8 @@
         'id' => $clovek_id,
         'first_name' => $jmeno,
         'last_name' => $prijmeni,
-        'room' => $mistnost,
+        'room' => $nazev,
+	'room_id' => $mistnost,
         'telephone' => $telefon,
         'position' => $pozice,
         'salary' => $plat,
