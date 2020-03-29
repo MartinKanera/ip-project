@@ -27,6 +27,7 @@ export const mutations: MutationTree<RootState> = {
   }
 };
 
+//TODO store only user_id and login in JWT verify on backend, then send back all data
 export const actions: ActionTree<RootState, RootState> = {
   async fetchUserData({ commit }, jwt) {
     const response = await axios({

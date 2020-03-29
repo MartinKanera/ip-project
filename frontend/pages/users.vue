@@ -23,67 +23,95 @@
 
             <v-dialog v-model="dialog" max-width="500px">
               <v-card>
-                <v-card-title>
-                  <span class="headline">Edit user</span>
-                </v-card-title>
-
                 <v-card-text>
                   <v-container>
+                    <v-form ref="form" v-model="valid">
+                      <v-row>
+                        <v-col cols="6">
+                          <span class="headline">Edit user</span>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-switch
+                            color="accent"
+                            v-model="editedItem.admin"
+                            label="Admin"
+                            style="margin-top: 0; margin-left: 50%"
+                          ></v-switch>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="4">
+                          <v-text-field
+                            color="accent"
+                            v-model="editedItem.first_name"
+                            label="First name"
+                            :rules="nameRules"
+                            required
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="4">
+                          <v-text-field
+                            color="accent"
+                            v-model="editedItem.last_name"
+                            label="Last name"
+                            :rules="nameRules"
+                            required
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="4">
+                          <v-text-field
+                            color="accent"
+                            required
+                            v-model="editedItem.position"
+                            label="Positon"
+                            :rules="[
+                              v => !!v || 'Position is required']"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="4">
+                          <v-text-field
+                            color="accent"
+                            required
+                            type="number"
+                            v-model="editedItem.salary"
+                            label="Salary"
+                            :rules="[
+                              v => !!v || 'Salary is required',
+                              ]"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6" md="8">
+                          <v-select
+                            :items="rooms"
+                            label="Room"
+                            v-model="editedItem.text"
+                            color="accent"
+                            item-color="accent"
+                            required
+                          ></v-select>
+                        </v-col>
+                      </v-row>
+                      <v-row>
+                        <v-col cols="12" sm="6">
+                          <v-text-field
+                            color="accent"
+                            required
+                            v-model="editedItem.login"
+                            label="Login"
+                            :rules="[
+                              v => !!v || 'Login is required']"
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="12" sm="6">
+                          <v-text-field
+                            type="password"
+                            color="accent"
+                            v-model="editedItem.password"
+                            label="Password"
+                          ></v-text-field>
+                        </v-col>
+                      </v-row>
+                    </v-form>
                     <v-row>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          color="accent"
-                          v-model="editedItem.first_name"
-                          label="First name"
-                          required
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          color="accent"
-                          v-model="editedItem.last_name"
-                          label="Last name"
-                          required
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          color="accent"
-                          required
-                          v-model="editedItem.position"
-                          label="Positon"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-select
-                          :items="rooms"
-                          label="Room"
-                          dense
-                          v-model="editedItem.text"
-                          color="accent"
-                          item-color="accent"
-                          required
-                        ></v-select>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          color="accent"
-                          required
-                          v-model="editedItem.login"
-                          label="Login"
-                        ></v-text-field>
-                      </v-col>
-                      <v-col cols="12" sm="6" md="4">
-                        <v-text-field
-                          type="password"
-                          color="accent"
-                          v-model="editedItem.password"
-                          label="Password"
-                        ></v-text-field>
-                      </v-col>
-                    </v-row>
-                    <v-row>
-                      <v-col cols="6" v-for="(room, index) in rooms">
+                      <v-col md="4" v-for="(room, index) in rooms">
                         <v-checkbox
                           color="accent"
                           v-model="editedItem.selectedKeys"
@@ -99,7 +127,7 @@
                 <v-card-actions>
                   <v-spacer></v-spacer>
                   <v-btn color="red" text @click="dialog = false">Cancel</v-btn>
-                  <v-btn color="green" text>Save</v-btn>
+                  <v-btn color="green" text @click="saveChanges">Save</v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -126,19 +154,61 @@
       </v-data-table>
     </v-container>
   </div>
-  <!--
-    
-  -->
 </template>
 
 <style lang="sass">
 </style>
+<style>
+</style>
 
 <script lang="ts">
-import { defineComponent, ref, watchEffect } from '@vue/composition-api';
+import {
+  defineComponent,
+  ref,
+  watchEffect,
+  onMounted,
+  Ref
+} from '@vue/composition-api';
 import axios from 'axios';
+import { VForm } from '../types';
 
-// TODO: editedItem type
+export type EditedItem = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  text: string;
+  room_id?: number;
+  position: string;
+  admin: number;
+  login: string;
+  password: string;
+  selectedKeys: Number[];
+  salary: number;
+};
+
+export type User = {
+  id: number;
+  first_name: string;
+  last_name: string;
+  room: string;
+  room_id: number;
+  position: string;
+  admin: number;
+  login: string;
+  password: string;
+  selectedKeys: Number[];
+  salary: number;
+};
+
+export type Room = {
+  room_id: number;
+  text: string;
+};
+
+type Key = {
+  user_id: number;
+  room_id: number;
+};
 
 export default defineComponent({
   layout: 'browser',
@@ -171,7 +241,7 @@ export default defineComponent({
       }
     ]);
     const loading = ref(true);
-    const editedItem = ref({
+    const editedItem: Ref<EditedItem> = ref({
       id: 0,
       first_name: '',
       last_name: '',
@@ -181,23 +251,21 @@ export default defineComponent({
       admin: 0,
       login: '',
       password: '',
-      selectedKeys: [] as Number[]
+      selectedKeys: []
     });
     const dialog = ref(false);
     const isAdmin = ref(false);
     const tableLoading = ref(true);
     const users = ref([]);
-    const rooms = ref([]);
+    const rooms: Ref<Array<Room>> = ref([]);
     const keys = ref([]);
     const selectValue = ref('');
 
     watchEffect(() => {
       editedItem.value.room_id = rooms.value.find(
-        (room) => room.text == editedItem.value.text
+        (room: Room) => room.text == editedItem.value.text
       )?.room_id;
     });
-
-    watchEffect(() => console.log(editedItem.value.selectedKeys));
 
     (async () => {
       const jwt = localStorage.getItem('jwt') ?? false;
@@ -237,7 +305,7 @@ export default defineComponent({
       tableLoading.value = false;
     })();
 
-    function editItemDialog(user) {
+    function editItemDialog(user: User) {
       editedItem.value = {
         id: user.id,
         first_name: user.first_name,
@@ -245,19 +313,58 @@ export default defineComponent({
         text: user.room,
         position: user.position,
         room_id: user.room_id,
+        salary: user.salary,
         login: user.login,
         admin: user.admin, //This is int
         password: '',
         selectedKeys: keys.value
-          .filter(
-            (key: { user_id: number; room_id: number }) =>
-              key.user_id == user.id
-          )
-          .map((key: { user_id: number; room_id: number }) => key.room_id)
+          .filter((key: Key) => key.user_id == user.id)
+          .map((key: Key) => key.room_id)
       };
       dialog.value = true;
-      console.log(editedItem.value.selectedKeys);
     }
+    const valid = ref(true);
+
+    async function saveChanges() {
+      // @ts-ignore
+      if ((setupContext.refs.form as VForm).validate()) {
+        // try {
+        //   const response = await axios({
+        //     method: 'POST',
+        //     url: process.env.API_URL + '/api/user/update.php',
+        //     headers: {
+        //       Authorization: `Bearer ${localStorage.getItem('jwt')}`
+        //     },
+        //     data: {
+        //       data: editedItem.value
+        //     }
+        //   });
+        //   console.log(response.data);
+        // } catch (e) {
+        //   console.error(response.data);
+        // }
+        const response = await axios({
+          method: 'POST',
+          url: process.env.API_URL + '/api/user/update.php',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('jwt')}`
+          },
+          data: {
+            data: editedItem.value
+          }
+        });
+        console.log(response);
+
+        dialog.value = false;
+      } else valid.value = false;
+    }
+
+    //RULES
+    const nameRules = ref([
+      (v: string) => !!v || 'Name is required',
+      (v: string) => (v && v.length >= 2) || 'Minimum 2 chars',
+      (v: string) => /^[A-Z]+/.test(v) || 'Missing capital letter'
+    ]);
 
     return {
       loading,
@@ -270,7 +377,10 @@ export default defineComponent({
       tableLoading,
       rooms,
       keys,
-      selectValue
+      selectValue,
+      saveChanges,
+      nameRules,
+      valid
     };
   }
 });
