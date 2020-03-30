@@ -44,7 +44,11 @@
     exit;
   }
 
-  if($payload->admin > 0) {
+  include_once '../../shared/data.php';
+
+  $check = verify_JWT($payload);
+
+  if($check['admin']) {
     include_once('../../config/database.php');
     include_once('../../models/user.php');
 

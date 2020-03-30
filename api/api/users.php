@@ -46,7 +46,7 @@
         'first_name' => $jmeno,
         'last_name' => $prijmeni,
         'room' => $nazev,
-	'room_id' => $mistnost,
+	      'room_id' => $mistnost,
         'telephone' => $telefon,
         'position' => $pozice,
         'salary' => $plat,

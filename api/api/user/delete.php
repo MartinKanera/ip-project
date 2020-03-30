@@ -26,6 +26,7 @@
   $data = json_decode($json)->data;
   
   $id = filter_var($data->id, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
+
   
   if(!$id) {
     http_response_code(400);
@@ -35,9 +36,13 @@
     exit;
   }
 
-  if($payload->admin > 0) {
-    include_once('../../config/Database.php');
-    include_once('../../models/User.php');
+  include_once '../../shared/data.php';
+
+  $check = verify_JWT($payload);
+
+  if($check['admin']) {
+    include_once('../../config/database.php');
+    include_once('../../models/user.php');
 
     $database = new Database();
     $db = $database->connect();

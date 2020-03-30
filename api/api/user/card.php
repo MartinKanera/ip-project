@@ -2,8 +2,8 @@
   header('Access-Control-Allow-Origin: *');
   header('Content-Type: application/json');
 
-  include_once('../../config/Database.php');
-  include_once('../../models/User.php');
+  include_once('../../config/database.php');
+  include_once('../../models/user.php');
 
   $json = file_get_contents('php://input');
   $data = json_decode($json)->data;

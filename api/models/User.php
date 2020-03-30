@@ -20,6 +20,31 @@ class User {
       return $stmt;
     }
 
+    public function data($id, $login) {
+      $query = 'SELECT clovek_id, login, admin, jmeno, prijmeni FROM ' . $this->table . ' WHERE login = :login AND clovek_id = :id';
+
+      $stmt = $this->conn->prepare($query);
+
+      $stmt->bindParam(':login', $login);
+      $stmt->bindParam(':id', $id);
+
+      $stmt->execute();
+
+      if($stmt->rowCount() === 1) {
+        $row = $stmt->fetch();
+        extract($row);
+
+        return array(
+          'user_id' => $clovek_id,
+          'first_name' => $jmeno,
+          'last_name' => $prijmeni,
+          'admin' => $admin
+        );
+      }
+
+      return false;
+    }
+
     public function change_password($id, $old_password, $new_password) {
       $query = 'SELECT hash FROM ' . $this->table . ' WHERE clovek_id = :id';
 
@@ -231,6 +256,7 @@ class User {
     }
 
     public function delete ($id) {
+
       $query = 'DELETE FROM klice WHERE clovek = :id';
 
       $stmt = $this->conn->prepare($query);

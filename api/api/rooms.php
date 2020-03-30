@@ -2,8 +2,8 @@
   header('Access-Control-Allow-Origin: *');
   header('Content-Type: application/json');
 
-  include_once('../config/Database.php');
-  include_once('../models/Room.php');
+  include_once('../config/database.php');
+  include_once('../models/room.php');
 
   function order_valid ($order_value) {
     $valid = array('nazev', 'cislo', 'telefon');

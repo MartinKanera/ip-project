@@ -42,10 +42,14 @@
     ));
     exit;
   }
+  
+include_once '../../shared/data.php';
 
-  if($payload->admin > 0) {
-    include_once('../../config/Database.php');
-    include_once('../../models/User.php');
+  $check = verify_JWT($payload);
+
+  if($check['admin']) {
+    include_once('../../config/database.php');
+    include_once('../../models/user.php');
 
     $database = new Database();
     $db = $database->connect();

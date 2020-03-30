@@ -21,7 +21,7 @@
 
   $json = file_get_contents('php://input');
   if($json == null) {
-    json_encode('ffs');
+    http_response_code(401);
     die();
   }
 
@@ -50,9 +50,7 @@
       if(password_verify($password, $hash)) {
         $payload = array(
           'user_id' => $clovek_id,
-          'first_name' => $jmeno,
-          'last_name' => $prijmeni,
-          'admin' => $admin
+          'login' => $username
         );
 
         $jwt =JWT::encode($payload, $key);
@@ -60,7 +58,6 @@
         echo json_encode(array(
           'message' => 'Login successful',
           'jwt' => $jwt,
-          'user' => $payload
         ));
       } else {
         http_response_code(400);
