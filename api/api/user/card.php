@@ -1,14 +1,12 @@
 <?php
   header('Access-Control-Allow-Origin: *');
   header('Content-Type: application/json');
+  header('Accesss-Control-Allow-Methods: GET');
 
   include_once('../../config/database.php');
   include_once('../../models/user.php');
 
-  $json = file_get_contents('php://input');
-  $data = json_decode($json)->data;
-
-  $id = filter_var($data->id, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
+  $id = filter_var($_GET['id'], FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
 
   $database = new Database();
   $db = $database->connect();

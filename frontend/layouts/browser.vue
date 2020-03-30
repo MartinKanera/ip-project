@@ -33,6 +33,20 @@
             </v-list-item-content>
           </v-list-item>
         </v-list>
+        <v-spacer></v-spacer>
+        <v-list>
+          <v-list-item>
+            <v-list-item-content>
+              <v-btn text block :color="route == 'users' ? 'accent' : ''" to="/users">USERS</v-btn>
+            </v-list-item-content>
+            <v-list-item-content>
+              <v-btn text block :color="route == 'rooms' ? 'accent' : ''" to="/rooms">ROOMS</v-btn>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item>
+            <v-list-item-content></v-list-item-content>
+          </v-list-item>
+        </v-list>
       </v-navigation-drawer>
     </div>
     <v-content>
@@ -43,56 +57,66 @@
     <v-overlay v-model="overlay" opacity="0.5" color="black">
       <v-container fluid>
         <v-card width="300px" height="350px">
-          <v-row>
-            <v-col></v-col>
-            <v-col align="right" cols="10">
-              <v-btn class="mx-2" icon fab dark small color="primary" @click="overlay = false">
-                <v-icon>mdi-close-thick</v-icon>
-              </v-btn>
-            </v-col>
-          </v-row>
-          <v-form>
+          <v-form v-model="valid" ref="form">
+            <v-row>
+              <v-col></v-col>
+              <v-col align="right" cols="10">
+                <v-btn class="mx-2" icon fab dark small color="primary" @click="overlay = false">
+                  <v-icon>mdi-close-thick</v-icon>
+                </v-btn>
+              </v-col>
+            </v-row>
+            <v-form>
+              <v-row>
+                <v-col></v-col>
+                <v-col cols="10" align="right">
+                  <v-text-field
+                    v-model="oldPassword"
+                    class="mt-4"
+                    label="OLD PASSWORD"
+                    color="accent"
+                    type="password"
+                    validate-on-blur
+                    required
+                    :rules="
+                      [
+                        v => !!v || 'Old password is required'
+                      ]"
+                  ></v-text-field>
+                </v-col>
+                <v-col></v-col>
+              </v-row>
+            </v-form>
             <v-row>
               <v-col></v-col>
               <v-col cols="10" align="right">
                 <v-text-field
-                  v-model="oldPassword"
+                  v-model="newPassword"
                   class="mt-4"
-                  label="OLD PASSWORD"
+                  label="NEW PASSWORD"
                   color="accent"
                   type="password"
                   validate-on-blur
                   required
+                  :rules="
+                      [
+                        v => !!v || 'New password is required'
+                      ]"
                 ></v-text-field>
               </v-col>
               <v-col></v-col>
             </v-row>
+            <v-row>
+              <v-col>
+                <v-btn
+                  class="mt-8 normal-case"
+                  color="accent"
+                  @click="changePassword"
+                  block
+                >Change password</v-btn>
+              </v-col>
+            </v-row>
           </v-form>
-          <v-row>
-            <v-col></v-col>
-            <v-col cols="10" align="right">
-              <v-text-field
-                v-model="newPassword"
-                class="mt-4"
-                label="NEW PASSWORD"
-                color="accent"
-                type="password"
-                validate-on-blur
-                required
-              ></v-text-field>
-            </v-col>
-            <v-col></v-col>
-          </v-row>
-          <v-row>
-            <v-col>
-              <v-btn
-                class="mt-8 normal-case"
-                color="accent"
-                @click="changePassword"
-                block
-              >Change password</v-btn>
-            </v-col>
-          </v-row>
         </v-card>
         <v-overlay v-model="chagePasswordOverlay" opacity="1" color="black" absolute>
           <v-progress-circular z-index="200" size="40" color="secondary" indeterminate></v-progress-circular>
@@ -114,6 +138,7 @@
 <script lang="ts">
 import { defineComponent, ref, watchEffect } from '@vue/composition-api';
 import axios from 'axios';
+import { VForm } from '../types';
 
 export default defineComponent({
   setup(_, setupContext) {
@@ -146,40 +171,48 @@ export default defineComponent({
       drawer.value = false;
     }
 
+    const route = ref(setupContext.root.$route.name);
+    const valid = ref(true);
+
     async function changePassword() {
       const jwt = localStorage.getItem('jwt') ?? false;
+      // @ts-ignore
+      if ((setupContext.refs.form as VForm).validate()) {
+        valid.value = true;
+        if (jwt) {
+          try {
+            chagePasswordOverlay.value = true;
 
-      if (jwt) {
-        try {
-          chagePasswordOverlay.value = true;
-
-          await axios({
-            method: 'POST',
-            url: process.env.API_URL + '/api/auth/new-password.php',
-            data: {
+            await axios({
+              method: 'POST',
+              url: process.env.API_URL + '/api/auth/new-password.php',
               data: {
-                id: setupContext.root.$store.getters.userId,
-                old_password: oldPassword.value,
-                new_password: newPassword.value
+                data: {
+                  id: setupContext.root.$store.getters.userId,
+                  old_password: oldPassword.value,
+                  new_password: newPassword.value
+                }
+              },
+              headers: {
+                Authorization: `Bearer ${jwt}`
               }
-            },
-            headers: {
-              Authorization: `Bearer ${jwt}`
-            }
-          });
+            });
 
-          color.value = 'green';
-          overlay.value = false;
-          message.value = 'Password changed successfully';
-          oldPassword.value = '';
-          newPassword.value = '';
-        } catch (e) {
-          color.value = 'green';
-          message.value = 'Old password incorrect';
+            color.value = 'green';
+            overlay.value = false;
+            message.value = 'Password changed successfully';
+            oldPassword.value = '';
+            newPassword.value = '';
+          } catch (e) {
+            color.value = 'red';
+            message.value = 'Old password is incorrect';
+          }
+
+          snackbar.value = true;
+          chagePasswordOverlay.value = false;
         }
-
-        snackbar.value = true;
-        chagePasswordOverlay.value = false;
+      } else {
+        valid.value = false;
       }
     }
 
@@ -196,7 +229,9 @@ export default defineComponent({
       chagePasswordOverlay,
       color,
       message,
-      snackbar
+      snackbar,
+      route,
+      valid
     };
   }
 });

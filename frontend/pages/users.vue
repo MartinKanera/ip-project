@@ -4,22 +4,20 @@
       <v-progress-circular z-index="200" size="40" color="secondary" indeterminate></v-progress-circular>
     </v-overlay>
     <v-container fluid>
-      <!-- :headers="" :items="" -->
-
       <v-data-table
         :items="users"
         :headers="headers"
         sort-by="first_name"
         class="elevation-4"
         hide-default-footer
-        :loading="tableLoading"
+        loading="tableLoading"
       >
         <template v-slot:top>
           <v-toolbar flat color="secondary">
             <v-toolbar-title>Users</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
-            <v-btn color="accent" dark>New User</v-btn>
+            <v-btn color="accent" dark @click="openCreateDialog">New User</v-btn>
 
             <v-dialog v-model="dialog" max-width="500px">
               <v-card>
@@ -96,8 +94,8 @@
                             required
                             v-model="editedItem.login"
                             label="Login"
-                            :rules="[
-                              v => !!v || 'Login is required']"
+                            :rules="loginRules"
+                            :error-messages="loginError"
                           ></v-text-field>
                         </v-col>
                         <v-col cols="12" sm="6">
@@ -165,10 +163,122 @@
       <v-card>
         <v-card-title class="headline" style="margin-left: -5px">Delete user?</v-card-title>
         <v-card-actions>
-          <v-btn color="accent" text @click="deleteDialog = false">Don't delete user</v-btn>
+          <v-btn color="accent" text @click="deleteDialog = false">Cancel</v-btn>
           <v-spacer></v-spacer>
 
           <v-btn color="red" text @click="deleteUser">Delete user</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="createDialog" max-width="500px">
+      <v-card>
+        <v-card-text>
+          <v-container>
+            <v-form ref="createForm" v-model="createValid">
+              <v-row>
+                <v-col cols="6">
+                  <span class="headline">Create user</span>
+                </v-col>
+                <v-col cols="6">
+                  <v-switch
+                    color="accent"
+                    v-model="newUser.admin"
+                    label="Admin"
+                    style="margin-top: 0; margin-left: 45%"
+                  ></v-switch>
+                </v-col>
+                <v-col cols="12" sm="6" md="4">
+                  <v-text-field
+                    color="accent"
+                    v-model="newUser.first_name"
+                    label="First name"
+                    :rules="nameRules"
+                    required
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6" md="4">
+                  <v-text-field
+                    color="accent"
+                    v-model="newUser.last_name"
+                    label="Last name"
+                    :rules="nameRules"
+                    required
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6" md="4">
+                  <v-text-field
+                    color="accent"
+                    required
+                    v-model="newUser.position"
+                    label="Positon"
+                    :rules="[
+                              v => !!v || 'Position is required']"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6" md="4">
+                  <v-text-field
+                    color="accent"
+                    required
+                    type="number"
+                    v-model="newUser.salary"
+                    label="Salary"
+                    :rules="[
+                              v => !!v || 'Salary is required',
+                              ]"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6" md="8">
+                  <v-select
+                    :items="rooms"
+                    label="Room"
+                    v-model="newUser.text"
+                    color="accent"
+                    item-color="accent"
+                    required
+                  ></v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    color="accent"
+                    required
+                    v-model="newUser.login"
+                    label="Login"
+                    :error-messages="loginError"
+                    :rules="[
+                      v => !!v || 'Login is required']"
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" sm="6">
+                  <v-text-field
+                    type="password"
+                    color="accent"
+                    v-model="newUser.password"
+                    label="Password"
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-form>
+            <v-row>
+              <v-col md="4" v-for="(room, index) in rooms">
+                <v-checkbox
+                  color="accent"
+                  v-model="newUser.selected_rooms_id"
+                  :value="room.room_id"
+                  :label="room.text"
+                  :key="index"
+                ></v-checkbox>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red" text @click="createDialog = false">Cancel</v-btn>
+          <v-btn color="green" text @click="createUser">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -186,13 +296,14 @@ import {
   ref,
   watchEffect,
   onMounted,
+  computed,
   Ref
 } from '@vue/composition-api';
 import axios from 'axios';
 import { VForm } from '../types';
 
 export type EditedItem = {
-  id: number;
+  id?: number;
   first_name: string;
   last_name: string;
   text: string;
@@ -206,7 +317,7 @@ export type EditedItem = {
 };
 
 export type User = {
-  id: number;
+  id?: number;
   first_name: string;
   last_name: string;
   room: string;
@@ -281,6 +392,7 @@ export default defineComponent({
     const selectValue = ref('');
     const selectedUserId = ref(0);
     const deleteDialog = ref(false);
+    const usedLogins = computed(() => users.value.map((user) => user.login));
 
     watchEffect(() => {
       editedItem.value.room_id = rooms.value.find(
@@ -356,6 +468,7 @@ export default defineComponent({
       dialog.value = true;
     }
     const valid = ref(true);
+    const loginError = ref('');
 
     async function saveChanges() {
       const data = editedItem.value;
@@ -372,8 +485,11 @@ export default defineComponent({
         selected_rooms_id: data.selected_rooms_id
       };
 
+      if (validateLogin(changes.id, changes.login)) {
+        return;
+      }
       // @ts-ignore
-      if ((setupContext.refs.form as VForm).validate()) {
+      if (setupContext.refs.form.validate()) {
         const jwt = localStorage.getItem('jwt');
         try {
           const response = await axios({
@@ -403,7 +519,7 @@ export default defineComponent({
       deleteDialog.value = false;
       try {
         const jwt = localStorage.getItem('jwt');
-        await axios({
+        const response = await axios({
           method: 'POST',
           url: process.env.API_URL + '/api/user/delete.php',
           headers: {
@@ -413,6 +529,7 @@ export default defineComponent({
             data: { id: selectedUserId.value }
           }
         });
+        console.log(response.data);
 
         if (jwt) fetchUsers(jwt);
       } catch (e) {
@@ -425,6 +542,87 @@ export default defineComponent({
       (v: string) => !!v || 'Name is required',
       (v: string) => (v && v.length >= 2) || 'Minimum 2 chars'
     ]);
+
+    const loginRules = ref([(v: string) => !!v || 'Login is required']);
+
+    function validateLogin(id: number, login: string) {
+      const logins = users.value.filter((user) => user.login === login);
+
+      if (logins.length === 1 && logins[0].id !== id) {
+        loginError.value = 'Login already taken';
+        return true;
+      } else {
+        loginError.value = '';
+        return false;
+      }
+    }
+
+    const createDialog = ref(false);
+    const createValid = ref(true);
+    const newUser: Ref<EditedItem> = ref({});
+
+    async function openCreateDialog() {
+      createDialog.value = true;
+      newUser.value = {
+        first_name: '',
+        last_name: '',
+        position: '',
+        salary: 0,
+        room_id: 0,
+        login: '',
+        password: '',
+        admin: 0,
+        text: '',
+        selected_rooms_id: []
+      };
+    }
+
+    watchEffect(() => {
+      newUser.value.room_id = rooms.value.find(
+        (room: Room) => room.text == newUser.value.text
+      )?.room_id;
+    });
+
+    async function createUser() {
+      const data = newUser.value;
+
+      const newUserData = {
+        first_name: data.first_name,
+        last_name: data.last_name,
+        position: data.position,
+        salary: data.salary,
+        room_id: data.room_id,
+        login: data.login,
+        password: data.password,
+        admin: data.admin ? 1 : 0,
+        selected_rooms_id: data.selected_rooms_id
+      };
+      if (validateLogin(null, newUserData.login)) return;
+      // @ts-ignore
+      if ((setupContext.refs.createForm as VForm).validate()) {
+        try {
+          const jwt = localStorage.getItem('jwt');
+          const response = await axios({
+            method: 'POST',
+            url: process.env.API_URL + '/api/user/new.php',
+            headers: {
+              Authorization: `Bearer ${jwt}`
+            },
+            data: {
+              data: newUserData
+            }
+          });
+
+          createDialog.value = false;
+
+          if (jwt) fetchUsers(jwt);
+        } catch (e) {
+          console.log('Something went wrong');
+        }
+      } else {
+        createValid.value = false;
+      }
+    }
 
     return {
       loading,
@@ -443,7 +641,14 @@ export default defineComponent({
       valid,
       deleteUser,
       selectedUserId,
-      deleteDialog
+      deleteDialog,
+      openCreateDialog,
+      createDialog,
+      createUser,
+      createValid,
+      newUser,
+      loginRules,
+      loginError
     };
   },
   head: {

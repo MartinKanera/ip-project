@@ -139,7 +139,7 @@ class User {
       );
     }
 
-    public function create ($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id = array()) {
+    public function create ($first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id) {
       $query = 'INSERT INTO ' . $this->table . ' 
                 SET jmeno = :first_name, prijmeni = :last_name, pozice = :position, plat = :salary, mistnost = :room_id, login = :login, hash = :hash, admin = :admin';
 

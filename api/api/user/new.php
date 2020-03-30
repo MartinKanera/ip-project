@@ -33,7 +33,7 @@
   $login = filter_var($data->login);
   $password = filter_var($data->password);
   $admin = filter_var($data->admin, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0, "max_range" => 1]]);
-  $selected_rooms_id = filter_var($data->selected_rooms_id);
+  $selected_rooms_id = $data->selected_rooms_id ?? array(); 
 
   if(!$first_name || !$last_name || !$position || !$salary || !$room_id || !$login || $password === false || $password === null) {
     http_response_code(400);
