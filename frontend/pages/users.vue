@@ -12,7 +12,7 @@
         sort-by="first_name"
         class="elevation-4"
         hide-default-footer
-        loading="tableLoading"
+        :loading="tableLoading"
       >
         <template v-slot:top>
           <v-toolbar flat color="secondary">
@@ -35,7 +35,7 @@
                             color="accent"
                             v-model="editedItem.admin"
                             label="Admin"
-                            style="margin-top: 0; margin-left: 50%"
+                            style="margin-top: 0; margin-left: 45%"
                           ></v-switch>
                         </v-col>
                         <v-col cols="12" sm="6" md="4">
@@ -291,6 +291,8 @@ export default defineComponent({
     async function fetchUsers(jwt: string) {
       tableLoading.value = true;
 
+      console.log('Fetching users');
+
       try {
         const response = await axios({
           method: 'get',
@@ -310,7 +312,8 @@ export default defineComponent({
       } catch (e) {}
     }
 
-    (async () => {
+    async function validateUserData() {
+      loading.value = true;
       const jwt = localStorage.getItem('jwt') ?? false;
 
       if (jwt) {
@@ -330,7 +333,9 @@ export default defineComponent({
       isAdmin.value = setupContext.root.$store.getters.isAdmin;
 
       if (jwt) fetchUsers(jwt);
-    })();
+    }
+
+    validateUserData();
 
     function editItemDialog(user: User) {
       editedItem.value = {
@@ -353,10 +358,23 @@ export default defineComponent({
     const valid = ref(true);
 
     async function saveChanges() {
+      const data = editedItem.value;
+      const changes = {
+        id: data.id,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        position: data.position,
+        salary: data.salary,
+        room_id: data.room_id,
+        login: data.login,
+        password: data.password,
+        admin: data.admin ? 1 : 0,
+        selected_rooms_id: data.selected_rooms_id
+      };
+
       // @ts-ignore
       if ((setupContext.refs.form as VForm).validate()) {
         const jwt = localStorage.getItem('jwt');
-
         try {
           const response = await axios({
             method: 'POST',
@@ -365,7 +383,7 @@ export default defineComponent({
               Authorization: `Bearer ${jwt}`
             },
             data: {
-              data: editedItem.value
+              data: changes
             }
           });
         } catch (e) {
@@ -374,14 +392,16 @@ export default defineComponent({
 
         dialog.value = false;
 
+        if (changes.id === setupContext.root.$store.getters.userId)
+          validateUserData();
+
         if (jwt) fetchUsers(jwt);
       } else valid.value = false;
     }
 
     async function deleteUser() {
+      deleteDialog.value = false;
       try {
-        console.log(selectedUserId.value);
-
         const jwt = localStorage.getItem('jwt');
         await axios({
           method: 'POST',
@@ -394,8 +414,6 @@ export default defineComponent({
           }
         });
 
-        deleteDialog.value = false;
-
         if (jwt) fetchUsers(jwt);
       } catch (e) {
         console.log('Something went wrong');
@@ -405,8 +423,7 @@ export default defineComponent({
     //RULES
     const nameRules = ref([
       (v: string) => !!v || 'Name is required',
-      (v: string) => (v && v.length >= 2) || 'Minimum 2 chars',
-      (v: string) => /^[A-Z]+/.test(v) || 'Missing capital letter'
+      (v: string) => (v && v.length >= 2) || 'Minimum 2 chars'
     ]);
 
     return {
