@@ -151,7 +151,7 @@
                 <v-btn v-if="isAdmin" icon small class="mr=2" @click="openDeleteDialog(item)">
                   <v-icon small>mdi-delete</v-icon>
                 </v-btn>
-                <v-btn icon small>
+                <v-btn icon small :to="`/room?id=${item.id}`">
                   <v-icon small>mdi-folder-information</v-icon>
                 </v-btn>
               </v-content>

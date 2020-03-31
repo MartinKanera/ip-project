@@ -5,11 +5,6 @@
 
   $id = filter_var($_GET['id'], FILTER_VALIDATE_INT, ["options" => ["min_range" => 0]]);
 
-  $database = new Database();
-  $db = $database->connect();
-
-  $room = new Room($db);
-
   if(!$id) {
     http_response_code(400);
     echo json_encode(array(
@@ -17,6 +12,14 @@
     ));
     exit;
   }
+
+  include_once('../../models/room.php');
+  include_once('../../config/database.php');
+
+  $database = new Database();
+  $db = $database->connect();
+
+  $room = new Room($db);
 
   $stmt = $room->room_card($id);
 

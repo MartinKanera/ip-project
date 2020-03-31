@@ -9,36 +9,46 @@
           <v-sheet width="512" class="pa=5">
             <v-container class="pa-5" fluid>
               <v-row>
-                <v-col class="title">{{ user.first_name }} {{ user.last_name }}</v-col>
+                <v-col class="title">Room number {{ room.number }}</v-col>
               </v-row>
               <v-row>
-                <v-col cols="6" align="end" class="body-2 field pb-0">First name</v-col>
-                <v-col cols="6" class="body-2 pb-0">{{ user.first_name }}</v-col>
-                <v-col cols="6" align="end" class="py-0 body-2 field">Last name</v-col>
-                <v-col cols="6" class="body-2 py-0">{{ user.last_name }}</v-col>
-                <v-col cols="6" align="end" class="py-0 body-2 field">Position</v-col>
-                <v-col cols="6" class="body-2 py-0">{{ user.position }}</v-col>
-                <v-col cols="6" align="end" class="py-0 body-2 field">Salary</v-col>
-                <v-col
-                  cols="6"
-                  class="body-2 py-0"
-                >{{ user.salary.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,') + ' Kč' }}</v-col>
-
-                <v-col cols="6" align="end" class="py-0 body-2 field">Room</v-col>
-                <v-col cols="6" class="body-2 py-0 link">
-                  <nuxt-link class="link" :to="`/room?id=${user.room_id}`">{{ user.room }}</nuxt-link>
+                <v-col cols="6" align="end" class="body-2 field pb-0">Number</v-col>
+                <v-col cols="6" class="body-2 pb-0">{{ room.number }}</v-col>
+                <v-col cols="6" align="end" class="body-2 field py-0">Name</v-col>
+                <v-col cols="6" class="body-2 py-0">{{ room.name }}</v-col>
+                <v-col cols="6" align="end" class="body-2 field py-0">Average salary</v-col>
+                <v-col cols="6" class="body-2 py-0">{{ room.average + ' Kč' }}</v-col>
+                <v-col cols="6" align="end" class="py-0 body-2 field">Telephone</v-col>
+                <v-col cols="6" class="body-2 py-0">{{ room.telephone }}</v-col>
+              </v-row>
+              <v-row class="mt-2"></v-row>
+              <v-row v-if="room.people.length <= 0">
+                <v-col cols="6" align="end" class="py-0 body-2 field">People:</v-col>
+                <v-col cols="6" class="body-2 py-0">Nobody here</v-col>
+              </v-row>
+              <v-row v-else v-for="(user, index) in room.people">
+                <v-col v-if="index === 0" cols="6" align="end" class="py-0 body-2 field">People</v-col>
+                <v-col v-else cols="6"></v-col>
+                <v-col class="py-0 body-2">
+                  <nuxt-link
+                    class="link"
+                    :to="`/user?id=${user.id}`"
+                  >{{ user.first_name }} {{ user.last_name }}</nuxt-link>
                 </v-col>
               </v-row>
               <v-row class="mt-2"></v-row>
-              <v-row v-if="user.keys.length <= 0">
-                <v-col cols="6" class="body-2 py-0 field" align="end">Keys:</v-col>
+              <v-row v-if="room.keys.length <= 0">
+                <v-col cols="6" align="end" class="py-0 body-2 field">Keys:</v-col>
                 <v-col cols="6" class="body-2 py-0">No keys</v-col>
               </v-row>
-              <v-row v-else v-for="(key, index) in user.keys">
-                <v-col v-if="index === 0" cols="6" class="body-2 py-0 field" align="end">Keys:</v-col>
+              <v-row v-else v-for="(key, index) in room.keys">
+                <v-col v-if="index === 0" cols="6" align="end" class="py-0 body-2 field">Keys:</v-col>
                 <v-col v-else cols="6"></v-col>
-                <v-col cols="6" class="body-2 py-0 link">
-                  <nuxt-link class="link" :to="`/room?id=${key.id}`">{{ key.name }}</nuxt-link>
+                <v-col class="py-0 body-2">
+                  <nuxt-link
+                    class="link"
+                    :to="`/user?id=${key.id}`"
+                  >{{ key.first_name }} {{ key.last_name }}</nuxt-link>
                 </v-col>
               </v-row>
               <v-row>
@@ -59,23 +69,22 @@
   </div>
 </template>
 
-<style scoped lang="sass" scoped>
+<style lang="sass">
 .field 
   color: #29a19c
 
 .link
-  color: #b030b0
+  color: #b030b0 !important
   text-decoration: none
 
   &:hover
-    color: #ff00ff
+    color: #ff00ff !important
 
 .container-content 
   display: flex
   justify-content: center
   align-items: center
   flex-grow: 1
-
 </style>
 
 <script lang="ts">
@@ -86,13 +95,12 @@ export default defineComponent({
   layout: 'browser',
   setup(_, setupContext) {
     const loading = ref(true);
-    const user = ref({
-      first_name: '',
-      last_name: '',
-      position: '',
-      salary: 0,
-      room: '',
-      room_id: 0,
+    const room = ref({
+      number: 0,
+      name: '',
+      telephone: 0,
+      people: [],
+      average: '',
       keys: []
     });
 
@@ -117,19 +125,16 @@ export default defineComponent({
       if (params.id && !isNaN(params.id)) {
         try {
           const response = await axios.get(
-            process.env.API_URL + '/api/user/card.php',
+            process.env.API_URL + '/api/room/card.php',
             {
               params: params
             }
           );
 
-          user.value = response.data;
-
-          console.log(user.value);
-
+          room.value = response.data;
           loading.value = false;
 
-          document.title = `${response.data.first_name} ${response.data.last_name}`;
+          document.title = `Room #${response.data.number}`;
         } catch (e) {
           setupContext.root.$root.$router.replace('/error');
         }
@@ -140,7 +145,7 @@ export default defineComponent({
 
     return {
       loading,
-      user
+      room
     };
   },
   head: {
