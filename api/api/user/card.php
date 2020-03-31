@@ -56,12 +56,6 @@
         'name' => $nazev
       ));
     }
-  } else {
-    http_response_code(404);
-    echo json_encode(array(
-      'message' => 'No keys info'
-    ));
-    die();
   }
 
   echo json_encode($result, 256);

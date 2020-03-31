@@ -140,19 +140,24 @@
             <td>{{ item.position }}</td>
             <td>
               <v-content justify="center" align="center">
-                <v-icon v-if="isAdmin" small class="mr-2" @click="editItemDialog(item)">mdi-pencil</v-icon>
-                <v-icon
+                <v-btn v-if="isAdmin" icon small class="mr-2" @click="editItemDialog(item)">
+                  <v-icon small>mdi-pencil</v-icon>
+                </v-btn>
+                <v-btn
                   v-if="isAdmin"
+                  icon
                   small
                   class="mr-2"
                   @click="() => {
                   selectedUserId = item.id
                   deleteDialog = true;
                   }"
-                >mdi-delete</v-icon>
-                <nuxt-link :to="'/user?id=' + item.id">
+                >
+                  <v-icon small>mdi-delete</v-icon>
+                </v-btn>
+                <v-btn icon small :to="`/user?id=${item.id}`">
                   <v-icon small>mdi-folder-information</v-icon>
-                </nuxt-link>
+                </v-btn>
               </v-content>
             </td>
           </tr>
@@ -236,6 +241,8 @@
                     color="accent"
                     item-color="accent"
                     required
+                    :rules="[
+                      v => !!v || 'Room is required']"
                   ></v-select>
                 </v-col>
               </v-row>
@@ -257,6 +264,8 @@
                     color="accent"
                     v-model="newUser.password"
                     label="Password"
+                    :rules="[
+                      v => !!v || 'Password is required']"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -302,7 +311,7 @@ import {
 import axios from 'axios';
 import { VForm } from '../types';
 
-export type EditedItem = {
+type EditedItem = {
   id?: number;
   first_name: string;
   last_name: string;
@@ -316,7 +325,7 @@ export type EditedItem = {
   salary: number;
 };
 
-export type User = {
+type User = {
   id?: number;
   first_name: string;
   last_name: string;
@@ -330,7 +339,7 @@ export type User = {
   salary: number;
 };
 
-export type Room = {
+type Room = {
   room_id: number;
   text: string;
 };
@@ -370,7 +379,6 @@ export default defineComponent({
         sortable: false
       }
     ]);
-    const loading = ref(true);
     const editedItem: Ref<EditedItem> = ref({
       id: 0,
       first_name: '',
@@ -383,20 +391,47 @@ export default defineComponent({
       password: '',
       selected_rooms_id: []
     });
-    const dialog = ref(false);
+    const loading = ref(true);
     const isAdmin = ref(false);
-    const tableLoading = ref(true);
     const users = ref([]);
     const rooms: Ref<Array<Room>> = ref([]);
     const keys = ref([]);
+    const tableLoading = ref(true);
+
     const selectValue = ref('');
     const selectedUserId = ref(0);
-    const deleteDialog = ref(false);
-    const usedLogins = computed(() => users.value.map((user) => user.login));
+
+    //RULES
+    const nameRules = ref([
+      (v: string) => !!v || 'Name is required',
+      (v: string) => (v && v.length >= 2) || 'Minimum 2 chars'
+    ]);
+
+    const loginRules = ref([(v: string) => !!v || 'Login is required']);
+
+    function validateLogin(login: string, id?: number) {
+      const logins: Array<User> = users.value.filter(
+        (user: User) => user.login === login
+      );
+
+      if (logins.length === 1 && logins[0].id !== id) {
+        loginError.value = 'Login already taken';
+        return true;
+      } else {
+        loginError.value = '';
+        return false;
+      }
+    }
 
     watchEffect(() => {
       editedItem.value.room_id = rooms.value.find(
         (room: Room) => room.text == editedItem.value.text
+      )?.room_id;
+    });
+
+    watchEffect(() => {
+      newUser.value.room_id = rooms.value.find(
+        (room: Room) => room.text == newUser.value.text
       )?.room_id;
     });
 
@@ -449,6 +484,8 @@ export default defineComponent({
 
     validateUserData();
 
+    const dialog = ref(false);
+
     function editItemDialog(user: User) {
       editedItem.value = {
         id: user.id,
@@ -467,6 +504,7 @@ export default defineComponent({
       };
       dialog.value = true;
     }
+
     const valid = ref(true);
     const loginError = ref('');
 
@@ -485,9 +523,10 @@ export default defineComponent({
         selected_rooms_id: data.selected_rooms_id
       };
 
-      if (validateLogin(changes.id, changes.login)) {
+      if (validateLogin(changes.login, changes.id)) {
         return;
       }
+
       // @ts-ignore
       if (setupContext.refs.form.validate()) {
         const jwt = localStorage.getItem('jwt');
@@ -515,6 +554,8 @@ export default defineComponent({
       } else valid.value = false;
     }
 
+    const deleteDialog = ref(false);
+
     async function deleteUser() {
       deleteDialog.value = false;
       try {
@@ -534,26 +575,6 @@ export default defineComponent({
         if (jwt) fetchUsers(jwt);
       } catch (e) {
         console.log('Something went wrong');
-      }
-    }
-
-    //RULES
-    const nameRules = ref([
-      (v: string) => !!v || 'Name is required',
-      (v: string) => (v && v.length >= 2) || 'Minimum 2 chars'
-    ]);
-
-    const loginRules = ref([(v: string) => !!v || 'Login is required']);
-
-    function validateLogin(id: number, login: string) {
-      const logins = users.value.filter((user) => user.login === login);
-
-      if (logins.length === 1 && logins[0].id !== id) {
-        loginError.value = 'Login already taken';
-        return true;
-      } else {
-        loginError.value = '';
-        return false;
       }
     }
 
@@ -577,12 +598,6 @@ export default defineComponent({
       };
     }
 
-    watchEffect(() => {
-      newUser.value.room_id = rooms.value.find(
-        (room: Room) => room.text == newUser.value.text
-      )?.room_id;
-    });
-
     async function createUser() {
       const data = newUser.value;
 
@@ -597,7 +612,7 @@ export default defineComponent({
         admin: data.admin ? 1 : 0,
         selected_rooms_id: data.selected_rooms_id
       };
-      if (validateLogin(null, newUserData.login)) return;
+      if (validateLogin(newUserData.login, undefined)) return;
       // @ts-ignore
       if ((setupContext.refs.createForm as VForm).validate()) {
         try {

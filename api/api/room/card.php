@@ -55,12 +55,6 @@
         'id' => $clovek_id,
       ));
     }
-  } else {
-    http_response_code(404);
-    echo json_encode(array(
-      'message' => 'No people info'
-    ));
-    die();
   }
 
   if($stmt['stmt_average']->rowCount() > 0) {
@@ -69,12 +63,6 @@
     extract($row);
 
     $result['average'] = $prumer;
-  } else {
-    http_response_code(404);
-    echo json_encode(array(
-      'message' => 'No average info'
-    ));
-    die();
   }
 
   if($stmt['stmt_keys']->rowCount() > 0) {
@@ -87,12 +75,6 @@
         'id' => $clovek_id,
       ));
     }
-  } else {
-    http_response_code(404);
-    echo json_encode(array(
-      'message' => 'No keys info'
-    ));
-    die();
   }
 
   echo json_encode($result);
