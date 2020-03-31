@@ -3,9 +3,6 @@
   header('Content-Type: application/json');
   header('Access-Control-Allow-Headers: Access-Control-Allow-Headers, Content-Type, Access-Control-Allow-methods, Authorization');
 
-
-  
-
   function order_valid ($order_value) {
     $valid = array('jmeno', 'prijmeni', 'mistnost', 'telefon', 'pozice');
     return in_array(strtolower($order_value), $valid) ? $order_value : false;

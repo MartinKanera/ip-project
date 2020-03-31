@@ -1,6 +1,8 @@
 <?php
   header('Access-Control-Allow-Origin: *');
   header('Content-Type: application/json');
+  header('Access-Control-Allow-Headers: Access-Control-Allow-Headers, Content-Type, Access-Control-Allow-methods, Authorization');
+
 
   include_once('../config/database.php');
   include_once('../models/room.php');
@@ -16,10 +18,10 @@
   }
 
   $json = file_get_contents('php://input');
-  $data = json_decode($json)->data;
+  $data = json_decode($json)->data ?? (object) array('order_by' => 'jmeno', 'sort' => 'asc');
   
   $order_by = filter_var($data->order_by, FILTER_CALLBACK, array("options" => "order_valid"));
-  $order_by = filter_var($data->sort, FILTER_CALLBACK, array("options" => "sort_valid"));
+  $sort = filter_var($data->sort, FILTER_CALLBACK, array("options" => "sort_valid"));
 
   if(!$order_by) {
     $order_by = 'nazev';
