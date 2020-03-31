@@ -299,11 +299,13 @@ export default defineComponent({
 
     function validateNumber(number: number, id?: number) {
       const numbers: Array<Room> = rooms.value.filter(
-        (room: Room) => room.number === number
+        (room: Room) => room.number === number && room.id !== id
       );
 
-      if (numbers.length === 1 && numbers[0].id !== id) {
-        numberError.value = 'Telephone already taken';
+      console.log(numbers);
+
+      if (numbers.length === 1) {
+        numberError.value = 'Number already taken';
         return true;
       } else {
         numberError.value = '';
@@ -321,6 +323,8 @@ export default defineComponent({
     });
 
     function openEditDialog(item: Room) {
+      numberError.value = '';
+      telephoneError.value = '';
       editedItem.value = {
         id: item.id,
         name: item.name,
@@ -371,6 +375,8 @@ export default defineComponent({
     const newRoom: Ref<Room> = ref({});
 
     function openCreateDialog() {
+      numberError.value = '';
+      telephoneError.value = '';
       newRoom.value = {
         name: '',
         number: 0,

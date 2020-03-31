@@ -411,10 +411,10 @@ export default defineComponent({
 
     function validateLogin(login: string, id?: number) {
       const logins: Array<User> = users.value.filter(
-        (user: User) => user.login === login
+        (user: User) => user.login === login && user.id !== id
       );
 
-      if (logins.length === 1 && logins[0].id !== id) {
+      if (logins.length === 1) {
         loginError.value = 'Login already taken';
         return true;
       } else {
@@ -487,6 +487,7 @@ export default defineComponent({
     const dialog = ref(false);
 
     function editItemDialog(user: User) {
+      loginError.value = '';
       editedItem.value = {
         id: user.id,
         first_name: user.first_name,
@@ -585,6 +586,7 @@ export default defineComponent({
     const newUser: Ref<EditedItem> = ref({});
 
     async function openCreateDialog() {
+      loginError.value = '';
       createDialog.value = true;
       newUser.value = {
         first_name: '',
@@ -614,7 +616,7 @@ export default defineComponent({
         admin: data.admin ? 1 : 0,
         selected_rooms_id: data.selected_rooms_id
       };
-      if (validateLogin(newUserData.login, undefined)) return;
+      if (validateLogin(newUserData.login)) return;
       // @ts-ignore
       if ((setupContext.refs.createForm as VForm).validate()) {
         try {
