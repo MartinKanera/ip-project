@@ -17,7 +17,7 @@
             <v-toolbar-title>Rooms</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
-            <v-btn color="accent" dark>New Room</v-btn>
+            <v-btn color="accent" dark @click="openCreateDialog">New Room</v-btn>
 
             <v-dialog v-model="editDialog" max-width="500px">
               <v-card>
@@ -70,6 +70,58 @@
                 </v-card-actions>
               </v-card>
             </v-dialog>
+
+            <v-dialog v-model="createDialog" max-width="500px">
+              <v-card>
+                <v-card-text>
+                  <v-container>
+                    <v-form ref="createForm" v-model="createValid">
+                      <v-row>
+                        <v-col cols="12">
+                          <span class="headline">Create Room</span>
+                        </v-col>
+                        <v-col cols="12">
+                          <v-text-field
+                            color="accent"
+                            v-model="newRoom.name"
+                            label="Name"
+                            :rules="nameRules"
+                            required
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-text-field
+                            color="accent"
+                            v-model="newRoom.number"
+                            type="number"
+                            label="Number"
+                            :rules="numRules"
+                            required
+                          ></v-text-field>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-text-field
+                            color="accent"
+                            v-model="newRoom.telephone"
+                            type="number"
+                            label="Telephone"
+                            :rules="telRules"
+                            :error-messages="telephoneError"
+                            required
+                          ></v-text-field>
+                        </v-col>
+                      </v-row>
+                    </v-form>
+                  </v-container>
+                </v-card-text>
+
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn color="red" text @click="createDialog = false">Cancel</v-btn>
+                  <v-btn color="green" text @click="createRoom">Create</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-toolbar>
         </template>
         <template v-slot:item="{ item }">
@@ -105,7 +157,7 @@ type Room = {
   id?: number;
   name: string;
   number: number;
-  telephone?: number;
+  telephone?: string;
 };
 
 export default defineComponent({
@@ -194,23 +246,28 @@ export default defineComponent({
 
     const telRules = ref([
       (v) =>
-        v.toString().length === 4 ||
-        v === '' ||
+        (v ?? '').length === 0 ||
+        (v ?? '').length === 4 ||
         'Has to be 4 chars long or empty'
     ]);
 
     const telephoneError = ref('');
 
     function validateTelephone(telephone: number, id?: number) {
+      if (telephone === null || telephone.toString() === '') {
+        telephoneError.value = '';
+        return false;
+      }
       const telephones: Array<Room> = rooms.value.filter(
-        (room: Room) => room.telephone === telephone
+        (room: Room) => Number(room.telephone) === telephone
       );
+
       if (telephones.length === 1 && telephones[0].id !== id) {
         telephoneError.value = 'Telephone already taken';
-        return false;
+        return true;
       } else {
         telephoneError.value = '';
-        return true;
+        return false;
       }
     }
 
@@ -231,16 +288,20 @@ export default defineComponent({
         telephone: item.telephone
       };
 
-      console.log(editedItem.value.number.toString().length);
       editDialog.value = true;
     }
 
     async function saveChanges() {
       if (
-        validateTelephone(editedItem.value.telephone, editedItem.value.id) &&
-        //@ts-ignore
-        setupContext.refs.editForm.validate()
-      ) {
+        validateTelephone(
+          Number(editedItem.value.telephone),
+          editedItem.value.id
+        )
+      )
+        return;
+
+      //@ts-ignore
+      if (setupContext.refs.editForm.validate()) {
         const jwt = localStorage.getItem('jwt');
         try {
           const response = await axios({
@@ -261,7 +322,57 @@ export default defineComponent({
           editDialog.value = false;
         } catch (e) {}
       } else {
-        console.log('F');
+        return;
+      }
+    }
+
+    //CREATE
+    const createDialog = ref(false);
+    const createValid = ref(true);
+    const newRoom: Ref<Room> = ref({});
+
+    function openCreateDialog() {
+      newRoom.value = {
+        name: '',
+        number: 0,
+        telephone: ''
+      };
+
+      createDialog.value = true;
+    }
+
+    async function createRoom() {
+      if (validateTelephone(Number(editedItem.value.telephone), null)) return;
+      //@ts-ignore
+      if (setupContext.refs.createForm.validate()) {
+        const jwt = localStorage.getItem('jwt');
+        try {
+          console.log(newRoom.value);
+
+          const response = await axios({
+            method: 'POST',
+            url: process.env.API_URL + '/api/room/new.php',
+            headers: {
+              Authorization: `Bearer ${jwt}`
+            },
+            data: {
+              data: newRoom.value
+            }
+          });
+
+          console.log(response.data);
+
+          if (jwt) fetchRooms(jwt);
+
+          newRoom.value = {
+            name: '',
+            number: 0,
+            telephone: ''
+          };
+
+          createDialog.value = false;
+        } catch (e) {}
+      } else {
         return;
       }
     }
@@ -280,7 +391,12 @@ export default defineComponent({
       editedItem,
       editDialog,
       openEditDialog,
-      saveChanges
+      saveChanges,
+      createDialog,
+      createValid,
+      openCreateDialog,
+      newRoom,
+      createRoom
     };
   },
   head: {
