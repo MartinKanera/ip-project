@@ -44,6 +44,7 @@
                             type="number"
                             label="Number"
                             :rules="numRules"
+                            :error-messages="numberError"
                             required
                           ></v-text-field>
                         </v-col>
@@ -96,6 +97,7 @@
                             type="number"
                             label="Number"
                             :rules="numRules"
+                            :error-messages="numberError"
                             required
                           ></v-text-field>
                         </v-col>
@@ -122,6 +124,18 @@
                 </v-card-actions>
               </v-card>
             </v-dialog>
+
+            <v-dialog v-model="deleteDialog" max-width="310">
+              <v-card>
+                <v-card-title class="headline" style="margin-left: -5px">Delete room?</v-card-title>
+                <v-card-actions>
+                  <v-btn color="accent" text @click="deleteDialog = false">Cancel</v-btn>
+                  <v-spacer></v-spacer>
+
+                  <v-btn color="red" text @click="deleteRoom">Delete room</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-toolbar>
         </template>
         <template v-slot:item="{ item }">
@@ -134,7 +148,7 @@
                 <v-btn v-if="isAdmin" icon small class="mr=2" @click="openEditDialog(item)">
                   <v-icon small>mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn v-if="isAdmin" icon small class="mr=2">
+                <v-btn v-if="isAdmin" icon small class="mr=2" @click="openDeleteDialog(item)">
                   <v-icon small>mdi-delete</v-icon>
                 </v-btn>
                 <v-btn icon small>
@@ -146,6 +160,14 @@
         </template>
       </v-data-table>
     </v-container>
+    <v-snackbar v-model="snackbar" duration="7000" color="accent">
+      <v-content justify="center" align="center">
+        <span style="color: black">
+          <span>Please remove all users from room</span>
+          <span class="title ml-3" style="color: white">{{ roomName }}</span>
+        </span>
+      </v-content>
+    </v-snackbar>
   </div>
 </template>
 
@@ -204,8 +226,6 @@ export default defineComponent({
 
         rooms.value = response.data;
 
-        console.log(rooms.value);
-
         tableLoading.value = false;
       } catch (e) {}
     }
@@ -235,17 +255,17 @@ export default defineComponent({
 
     //RULES
     const nameRules = ref([
-      (v) => !!v || 'Name is required',
-      (v) => v.length >= 2 || 'Min 2 chars'
+      (v: string) => !!v || 'Name is required',
+      (v: string) => v.length >= 2 || 'Min 2 chars'
     ]);
 
     const numRules = ref([
-      (v) => !!v || 'Name is required',
-      (v) => v.toString().length === 3 || 'Has to be 3 chars long'
+      (v: string) => !!v || 'Name is required',
+      (v: string) => v.toString().length === 3 || 'Has to be 3 chars long'
     ]);
 
     const telRules = ref([
-      (v) =>
+      (v: string) =>
         (v ?? '').length === 0 ||
         (v ?? '').length === 4 ||
         'Has to be 4 chars long or empty'
@@ -254,19 +274,39 @@ export default defineComponent({
     const telephoneError = ref('');
 
     function validateTelephone(telephone: number, id?: number) {
-      if (telephone === null || telephone.toString() === '') {
-        telephoneError.value = '';
-        return false;
-      }
       const telephones: Array<Room> = rooms.value.filter(
         (room: Room) => Number(room.telephone) === telephone
       );
 
+      if (
+        telephone === null ||
+        telephone.toString() === '' ||
+        telephone === 0
+      ) {
+        telephoneError.value = '';
+        return false;
+      }
       if (telephones.length === 1 && telephones[0].id !== id) {
         telephoneError.value = 'Telephone already taken';
         return true;
       } else {
         telephoneError.value = '';
+        return false;
+      }
+    }
+
+    const numberError = ref('');
+
+    function validateNumber(number: number, id?: number) {
+      const numbers: Array<Room> = rooms.value.filter(
+        (room: Room) => room.number === number
+      );
+
+      if (numbers.length === 1 && numbers[0].id !== id) {
+        numberError.value = 'Telephone already taken';
+        return true;
+      } else {
+        numberError.value = '';
         return false;
       }
     }
@@ -296,7 +336,8 @@ export default defineComponent({
         validateTelephone(
           Number(editedItem.value.telephone),
           editedItem.value.id
-        )
+        ) ||
+        validateNumber(editedItem.value.number, editedItem.value.id)
       )
         return;
 
@@ -314,8 +355,6 @@ export default defineComponent({
               data: editedItem.value
             }
           });
-
-          console.log(response.data);
 
           if (jwt) fetchRooms(jwt);
 
@@ -342,13 +381,15 @@ export default defineComponent({
     }
 
     async function createRoom() {
-      if (validateTelephone(Number(editedItem.value.telephone), null)) return;
+      if (
+        validateTelephone(Number(editedItem.value.telephone)) ||
+        validateNumber(editedItem.value.number, editedItem.value.id)
+      )
+        return;
       //@ts-ignore
       if (setupContext.refs.createForm.validate()) {
         const jwt = localStorage.getItem('jwt');
         try {
-          console.log(newRoom.value);
-
           const response = await axios({
             method: 'POST',
             url: process.env.API_URL + '/api/room/new.php',
@@ -359,8 +400,6 @@ export default defineComponent({
               data: newRoom.value
             }
           });
-
-          console.log(response.data);
 
           if (jwt) fetchRooms(jwt);
 
@@ -377,6 +416,43 @@ export default defineComponent({
       }
     }
 
+    //DELETE
+    const itemToDelete = ref(0);
+    const roomName = ref('');
+    const deleteDialog = ref(false);
+    const snackbar = ref(false);
+
+    function openDeleteDialog(room: { id: number; name: string }) {
+      snackbar.value = false;
+      itemToDelete.value = room.id;
+      roomName.value = room.name;
+
+      deleteDialog.value = true;
+    }
+
+    async function deleteRoom() {
+      try {
+        console.log('Deleting');
+        console.log(itemToDelete.value);
+        const jwt = localStorage.getItem('jwt');
+        const response = await axios({
+          method: 'post',
+          url: process.env.API_URL + '/api/room/delete.php',
+          headers: {
+            Authorization: `Bearer ${jwt}`
+          },
+          data: {
+            data: { id: itemToDelete.value }
+          }
+        });
+
+        if (jwt) fetchRooms(jwt);
+      } catch (e) {
+        if (e.response.status === 409) snackbar.value = true;
+      }
+      deleteDialog.value = false;
+    }
+
     return {
       loading,
       tableLoading,
@@ -384,6 +460,7 @@ export default defineComponent({
       numRules,
       telRules,
       telephoneError,
+      numberError,
       headers,
       rooms,
       isAdmin,
@@ -396,7 +473,12 @@ export default defineComponent({
       createValid,
       openCreateDialog,
       newRoom,
-      createRoom
+      createRoom,
+      deleteDialog,
+      openDeleteDialog,
+      deleteRoom,
+      roomName,
+      snackbar
     };
   },
   head: {
