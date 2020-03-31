@@ -171,8 +171,10 @@ export default defineComponent({
       drawer.value = false;
     }
 
-    const route = ref(setupContext.root.$route.name);
+    const route = ref('');
     const valid = ref(true);
+
+    watchEffect(() => (route.value = setupContext.root.$route.name ?? ''));
 
     async function changePassword() {
       const jwt = localStorage.getItem('jwt') ?? false;

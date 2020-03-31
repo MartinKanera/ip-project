@@ -30,15 +30,24 @@
                 <v-col cols="6" align="end" class="py-0 body-2 field">Keys:</v-col>
                 <v-col cols="6"></v-col>
               </v-row>
-              <v-row v-for="key in user.keys">
+              <v-row v-if="user.keys.length <= 0">
+                <v-col cols="6"></v-col>
+                <v-col cols="6 body-2 py-0">No keys</v-col>
+              </v-row>
+              <v-row v-else v-for="key in user.keys">
                 <v-col cols="6"></v-col>
                 <v-col cols="6" class="body-2 py-0 link">
                   <nuxt-link class="link" :to="`/room?=id${key.id}`">{{ key.name }}</nuxt-link>
                 </v-col>
               </v-row>
               <v-row>
-                <v-col>
-                  <v-icon>mdi-arrow-back</v-icon>
+                <v-col class="mt-5">
+                  <nuxt-link to="/users" class="link">
+                    <v-btn text>
+                      <v-icon>mdi-arrow-left</v-icon>
+                      <span>Go back</span>
+                    </v-btn>
+                  </nuxt-link>
                 </v-col>
               </v-row>
             </v-container>
@@ -83,7 +92,7 @@ export default defineComponent({
       salary: 0,
       room: '',
       room_id: 0,
-      Keys: []
+      keys: []
     });
 
     (async () => {

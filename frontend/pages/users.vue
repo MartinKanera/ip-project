@@ -13,7 +13,7 @@
         loading="tableLoading"
       >
         <template v-slot:top>
-          <v-toolbar flat color="secondary">
+          <v-toolbar color="secondary">
             <v-toolbar-title>Users</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
@@ -570,7 +570,9 @@ export default defineComponent({
             data: { id: selectedUserId.value }
           }
         });
-        console.log(response.data);
+
+        if (selectedUserId.value === setupContext.root.$store.getters.userId)
+          validateUserData();
 
         if (jwt) fetchUsers(jwt);
       } catch (e) {
