@@ -213,8 +213,6 @@ export default defineComponent({
     async function fetchRooms(jwt: string) {
       tableLoading.value = true;
 
-      console.log('Fetching rooms');
-
       try {
         const response = await axios({
           method: 'get',
@@ -301,8 +299,6 @@ export default defineComponent({
       const numbers: Array<Room> = rooms.value.filter(
         (room: Room) => room.number === number && room.id !== id
       );
-
-      console.log(numbers);
 
       if (numbers.length === 1) {
         numberError.value = 'Number already taken';
@@ -438,8 +434,6 @@ export default defineComponent({
 
     async function deleteRoom() {
       try {
-        console.log('Deleting');
-        console.log(itemToDelete.value);
         const jwt = localStorage.getItem('jwt');
         const response = await axios({
           method: 'post',

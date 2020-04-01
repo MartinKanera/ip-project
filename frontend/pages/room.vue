@@ -53,7 +53,7 @@
               </v-row>
               <v-row>
                 <v-col class="mt-5">
-                  <nuxt-link to="/users" class="link">
+                  <nuxt-link to="/rooms" class="link">
                     <v-btn text>
                       <v-icon>mdi-arrow-left</v-icon>
                       <span>Go back</span>

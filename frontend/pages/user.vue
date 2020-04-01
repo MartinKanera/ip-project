@@ -125,8 +125,6 @@ export default defineComponent({
 
           user.value = response.data;
 
-          console.log(user.value);
-
           loading.value = false;
 
           document.title = `${response.data.first_name} ${response.data.last_name}`;

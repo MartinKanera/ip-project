@@ -36,7 +36,7 @@
   $admin = filter_var($data->admin, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0, "max_range" => 1]]);
   $selected_rooms_id = $data->selected_rooms_id ?? array();
 
-  if(!$first_name || !$last_name || !$position || !$salary || !$room_id || !$login || $admin === false || $admin === null) {
+  if(!$id || !$first_name || !$last_name || !$position || !$salary || !$room_id || !$login || $admin === false || $admin === null) {
     http_response_code(400);
     echo json_encode(array(
       'message' => 'Parameters are not fulfilled'
@@ -47,23 +47,31 @@
   include_once '../../shared/data.php';
 
   $check = verify_JWT($payload);
+  if($check['admin'] !== 1) {
+    http_response_code(401);
+    echo json_encode(array(
+        'message' => 'Unauthorized'
+    ));
+  }
 
-  if($check['admin']) {
-    include_once('../../config/database.php');
-    include_once('../../models/user.php');
+  if($check['user_id'] === $id && $admin !== 0) {
+    http_response_code(422);
+  }
 
-    $database = new Database();
-    $db = $database->connect();
-    
-    $user = new User($db);
-    
-    if($user->update($id, $first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id)) {
-      http_response_code(204);
-    } else {
-      http_response_code(500);
-      echo json_encode(array(
-        'message' => 'Failed to update user'
-      ));
-    }
+  include_once('../../config/database.php');
+  include_once('../../models/user.php');
+
+  $database = new Database();
+  $db = $database->connect();
+  
+  $user = new User($db);
+
+  if($user->update($id, $first_name, $last_name, $position, $salary, $room_id, $login, $password, $admin, $selected_rooms_id)) {
+    http_response_code(204);
+  } else {
+    http_response_code(500);
+    echo json_encode(array(
+      'message' => 'Failed to update user'
+    ));
   }
 ?>

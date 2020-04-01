@@ -33,6 +33,7 @@
                             color="accent"
                             v-model="editedItem.admin"
                             label="Admin"
+                            :disabled="editedItem.id === userId"
                             style="margin-top: 0; margin-left: 45%"
                           ></v-switch>
                         </v-col>
@@ -400,6 +401,7 @@ export default defineComponent({
 
     const selectValue = ref('');
     const selectedUserId = ref(0);
+    const userId = ref(0);
 
     //RULES
     const nameRules = ref([
@@ -410,6 +412,8 @@ export default defineComponent({
     const loginRules = ref([(v: string) => !!v || 'Login is required']);
 
     function validateLogin(login: string, id?: number) {
+      login = login.toLowerCase();
+
       const logins: Array<User> = users.value.filter(
         (user: User) => user.login === login && user.id !== id
       );
@@ -435,10 +439,12 @@ export default defineComponent({
       )?.room_id;
     });
 
+    watchEffect(() => {
+      userId.value = setupContext.root.$store.getters.userId;
+    });
+
     async function fetchUsers(jwt: string) {
       tableLoading.value = true;
-
-      console.log('Fetching users');
 
       try {
         const response = await axios({
@@ -528,6 +534,11 @@ export default defineComponent({
         return;
       }
 
+      if (
+        changes.id === setupContext.root.$store.getters.userId &&
+        changes.admin !== 1
+      ) {
+      }
       // @ts-ignore
       if (setupContext.refs.form.validate()) {
         const jwt = localStorage.getItem('jwt');
@@ -542,14 +553,9 @@ export default defineComponent({
               data: changes
             }
           });
-        } catch (e) {
-          console.log('Failed to update user');
-        }
+        } catch (e) {}
 
         dialog.value = false;
-
-        if (changes.id === setupContext.root.$store.getters.userId)
-          validateUserData();
 
         if (jwt) fetchUsers(jwt);
       } else valid.value = false;
@@ -576,9 +582,7 @@ export default defineComponent({
           validateUserData();
 
         if (jwt) fetchUsers(jwt);
-      } catch (e) {
-        console.log('Something went wrong');
-      }
+      } catch (e) {}
     }
 
     const createDialog = ref(false);
@@ -635,9 +639,7 @@ export default defineComponent({
           createDialog.value = false;
 
           if (jwt) fetchUsers(jwt);
-        } catch (e) {
-          console.log('Something went wrong');
-        }
+        } catch (e) {}
       } else {
         createValid.value = false;
       }
@@ -647,6 +649,7 @@ export default defineComponent({
       loading,
       headers,
       users,
+      userId,
       editedItem,
       dialog,
       editItemDialog,
