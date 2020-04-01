@@ -172,7 +172,12 @@
           <v-btn color="accent" text @click="deleteDialog = false">Cancel</v-btn>
           <v-spacer></v-spacer>
 
-          <v-btn color="red" text @click="deleteUser">Delete user</v-btn>
+          <v-btn
+            color="red"
+            text
+            :disabled="selectedUserId === userId"
+            @click="deleteUser"
+          >Delete user</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -533,12 +538,6 @@ export default defineComponent({
       if (validateLogin(changes.login, changes.id)) {
         return;
       }
-
-      if (
-        changes.id === setupContext.root.$store.getters.userId &&
-        changes.admin !== 1
-      ) {
-      }
       // @ts-ignore
       if (setupContext.refs.form.validate()) {
         const jwt = localStorage.getItem('jwt');
@@ -577,9 +576,6 @@ export default defineComponent({
             data: { id: selectedUserId.value }
           }
         });
-
-        if (selectedUserId.value === setupContext.root.$store.getters.userId)
-          validateUserData();
 
         if (jwt) fetchUsers(jwt);
       } catch (e) {}

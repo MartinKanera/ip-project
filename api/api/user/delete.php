@@ -39,23 +39,37 @@
   include_once '../../shared/data.php';
 
   $check = verify_JWT($payload);
-
-  if($check['admin']) {
-    include_once('../../config/database.php');
-    include_once('../../models/user.php');
-
-    $database = new Database();
-    $db = $database->connect();
-
-    $user = new User($db);
-
-    if($user->delete($id)) {
-      http_response_code(204);
-    } else {
-      http_response_code(409);
-      echo json_encode(array(
-        'message' => 'Failed to delete user'
+  
+  if($check['admin'] !== 1){
+    http_response_code(401);
+    echo json_encode(
+      array(
+        'message' => 'Unauthorized'
       ));
-    }
+    die();
+  }
+
+  if($check['user_id'] === $id) {
+    http_response_code(422);
+    die();
+  }
+
+  include_once('../../config/database.php');
+  include_once('../../models/user.php');
+
+  $database = new Database();
+  $db = $database->connect();
+
+  $user = new User($db);
+
+  if($user->delete($id)) {
+    http_response_code(204);
+  } else {
+    http_response_code(409);
+    echo json_encode(array(
+      'message' => 'Failed to delete user'
+    ));
   }
 ?>
+
+

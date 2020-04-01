@@ -52,10 +52,12 @@
     echo json_encode(array(
         'message' => 'Unauthorized'
     ));
+    die();
   }
 
-  if($check['user_id'] === $id && $admin !== 0) {
+  if($check['user_id'] === $id && $admin === 0) {
     http_response_code(422);
+    die();
   }
 
   include_once('../../config/database.php');
