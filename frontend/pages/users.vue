@@ -62,7 +62,9 @@
                             v-model="editedItem.position"
                             label="Positon"
                             :rules="[
-                              v => !!v || 'Position is required']"
+                              v => !!v || 'Position is required',
+                              v => v.length >= 2 || 'Min 2 char including decimals'
+                              ]"
                           ></v-text-field>
                         </v-col>
                         <v-col cols="12" sm="6" md="4">
@@ -84,6 +86,9 @@
                             v-model="editedItem.text"
                             color="accent"
                             item-color="accent"
+                            :rules="[
+                              v => !!v || 'Room is required'
+                            ]"
                             required
                           ></v-select>
                         </v-col>
@@ -105,6 +110,7 @@
                             color="accent"
                             v-model="editedItem.password"
                             label="Password"
+                            :rules="editPasswordRules"
                           ></v-text-field>
                         </v-col>
                       </v-row>
@@ -224,7 +230,9 @@
                     v-model="newUser.position"
                     label="Positon"
                     :rules="[
-                              v => !!v || 'Position is required']"
+                      v => !!v || 'Position is required',
+                      v => v.length >= 2 || 'Min 2 char including decimals'
+                    ]"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6" md="4">
@@ -235,8 +243,8 @@
                     v-model="newUser.salary"
                     label="Salary"
                     :rules="[
-                              v => !!v || 'Salary is required',
-                              ]"
+                      v => !!v || 'Salary is required',
+                    ]"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6" md="8">
@@ -260,8 +268,7 @@
                     v-model="newUser.login"
                     label="Login"
                     :error-messages="loginError"
-                    :rules="[
-                      v => !!v || 'Login is required']"
+                    :rules="loginRules"
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12" sm="6">
@@ -270,8 +277,7 @@
                     color="accent"
                     v-model="newUser.password"
                     label="Password"
-                    :rules="[
-                      v => !!v || 'Password is required']"
+                    :rules="createPasswordRules"
                   ></v-text-field>
                 </v-col>
               </v-row>
@@ -414,7 +420,20 @@ export default defineComponent({
       (v: string) => (v && v.length >= 2) || 'Minimum 2 chars'
     ]);
 
-    const loginRules = ref([(v: string) => !!v || 'Login is required']);
+    const loginRules = ref([
+      (v: string) => !!v || 'Login is required',
+      (v: string) => (v && v.length >= 4) || 'Minimum 4 chars'
+    ]);
+
+    const createPasswordRules = ref([
+      (v: string) => (v ?? '').length >= 6 || 'Min 6 chars'
+    ]);
+    const editPasswordRules = ref([
+      (v: string) =>
+        (v ?? '').length === 0 ||
+        (v ?? '').length >= 6 ||
+        'Min 6 chars long or empty'
+    ]);
 
     function validateLogin(login: string, id?: number) {
       login = login.toLowerCase();
@@ -552,11 +571,11 @@ export default defineComponent({
               data: changes
             }
           });
+
+          dialog.value = false;
+
+          if (jwt) fetchUsers(jwt);
         } catch (e) {}
-
-        dialog.value = false;
-
-        if (jwt) fetchUsers(jwt);
       } else valid.value = false;
     }
 
@@ -644,6 +663,8 @@ export default defineComponent({
     return {
       loading,
       headers,
+      editPasswordRules,
+      createPasswordRules,
       users,
       userId,
       editedItem,

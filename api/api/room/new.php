@@ -29,7 +29,7 @@
   $name = $data->name;
   $telephone = filter_var($data->telephone, FILTER_SANITIZE_NUMBER_INT);
 
-  if(!$number || !$name) {
+  if(!$number || !$name || !preg_match('/^[^\n]{2,}$/', $name) || $number > 999 || $telephone > 9999) {
     http_response_code(400);
     echo json_encode(array(
       'message' => 'Parameters are not fulfilled'
@@ -50,7 +50,7 @@
 
     $room = new Room($db);
 
-    if($room->create($number, $name, $telephone)) {
+    if($room->create($number, ucfirst($name), $telephone)) {
       http_response_code(201);
     } else {
       http_response_code(500);

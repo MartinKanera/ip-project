@@ -22,6 +22,7 @@
     die();
   }
 
+
 $json = file_get_contents('php://input');
 $data = json_decode($json)->data;
 
@@ -29,7 +30,8 @@ $id = filter_var($data->id, FILTER_VALIDATE_INT, ["options" => ["min_range" => 0
 $old_password = $data->old_password;
 $new_password = $data->new_password;
 
-  if(!$id || !$old_password || !$new_password) {
+
+  if(!$id || !$old_password || !$new_password || !preg_match('/^[^ \n]{6,}$/', $new_password)) {
     http_response_code(400);
     echo json_encode(array(
       'message' => 'Parameters are not fulfilled'
@@ -37,8 +39,8 @@ $new_password = $data->new_password;
     exit;
   }
 
-  include_once('../../config/Database.php');
-  include_once('../../models/User.php');
+  include_once('../../config/database.php');
+  include_once('../../models/user.php');
 
   $database = new Database();
   $db = $database->connect();

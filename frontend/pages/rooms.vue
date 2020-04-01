@@ -1,7 +1,12 @@
 <template>
   <div>
     <v-overlay color="black" opacity="1" :value="loading">
-      <v-progress-circular z-index="200" size="40" color="secondary" indeterminate></v-progress-circular>
+      <v-progress-circular
+        z-index="200"
+        size="40"
+        color="secondary"
+        indeterminate
+      ></v-progress-circular>
     </v-overlay>
     <v-container fluid>
       <v-data-table
@@ -17,7 +22,9 @@
             <v-toolbar-title>Rooms</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
-            <v-btn color="accent" dark @click="openCreateDialog">New Room</v-btn>
+            <v-btn color="accent" dark @click="openCreateDialog"
+              >New Room</v-btn
+            >
 
             <v-dialog v-model="editDialog" max-width="500px">
               <v-card>
@@ -66,7 +73,9 @@
 
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="red" text @click="editDialog = false">Cancel</v-btn>
+                  <v-btn color="red" text @click="editDialog = false"
+                    >Cancel</v-btn
+                  >
                   <v-btn color="green" text @click="saveChanges">Save</v-btn>
                 </v-card-actions>
               </v-card>
@@ -119,7 +128,9 @@
 
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="red" text @click="createDialog = false">Cancel</v-btn>
+                  <v-btn color="red" text @click="createDialog = false"
+                    >Cancel</v-btn
+                  >
                   <v-btn color="green" text @click="createRoom">Create</v-btn>
                 </v-card-actions>
               </v-card>
@@ -127,12 +138,18 @@
 
             <v-dialog v-model="deleteDialog" max-width="310">
               <v-card>
-                <v-card-title class="headline" style="margin-left: -5px">Delete room?</v-card-title>
+                <v-card-title class="headline" style="margin-left: -5px"
+                  >Delete room?</v-card-title
+                >
                 <v-card-actions>
-                  <v-btn color="accent" text @click="deleteDialog = false">Cancel</v-btn>
+                  <v-btn color="accent" text @click="deleteDialog = false"
+                    >Cancel</v-btn
+                  >
                   <v-spacer></v-spacer>
 
-                  <v-btn color="red" text @click="deleteRoom">Delete room</v-btn>
+                  <v-btn color="red" text @click="deleteRoom"
+                    >Delete room</v-btn
+                  >
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -145,10 +162,22 @@
             <td>{{ item.telephone }}</td>
             <td>
               <v-content justify="center" align="center">
-                <v-btn v-if="isAdmin" icon small class="mr=2" @click="openEditDialog(item)">
+                <v-btn
+                  v-if="isAdmin"
+                  icon
+                  small
+                  class="mr=2"
+                  @click="openEditDialog(item)"
+                >
                   <v-icon small>mdi-pencil</v-icon>
                 </v-btn>
-                <v-btn v-if="isAdmin" icon small class="mr=2" @click="openDeleteDialog(item)">
+                <v-btn
+                  v-if="isAdmin"
+                  icon
+                  small
+                  class="mr=2"
+                  @click="openDeleteDialog(item)"
+                >
                   <v-icon small>mdi-delete</v-icon>
                 </v-btn>
                 <v-btn icon small :to="`/room?id=${item.id}`">
@@ -259,7 +288,8 @@ export default defineComponent({
 
     const numRules = ref([
       (v: string) => !!v || 'Name is required',
-      (v: string) => v.toString().length === 3 || 'Has to be 3 chars long'
+      (v: string) =>
+        (v ?? '').toString().length === 3 || 'Has to be 3 chars long'
     ]);
 
     const telRules = ref([
@@ -271,16 +301,12 @@ export default defineComponent({
 
     const telephoneError = ref('');
 
-    function validateTelephone(telephone: number, id?: number) {
+    function validateTelephone(telephone?: string, id?: number) {
       const telephones: Array<Room> = rooms.value.filter(
-        (room: Room) => Number(room.telephone) === telephone
+        (room: Room) => room.telephone === telephone
       );
 
-      if (
-        telephone === null ||
-        telephone.toString() === '' ||
-        telephone === 0
-      ) {
+      if (!telephone) {
         telephoneError.value = '';
         return false;
       }
@@ -333,10 +359,7 @@ export default defineComponent({
 
     async function saveChanges() {
       if (
-        validateTelephone(
-          Number(editedItem.value.telephone),
-          editedItem.value.id
-        ) ||
+        validateTelephone(editedItem.value.telephone, editedItem.value.id) ||
         validateNumber(editedItem.value.number, editedItem.value.id)
       )
         return;
@@ -372,20 +395,20 @@ export default defineComponent({
 
     function openCreateDialog() {
       numberError.value = '';
-      telephoneError.value = '';
       newRoom.value = {
         name: '',
         number: 0,
         telephone: ''
       };
+      telephoneError.value = '';
 
       createDialog.value = true;
     }
 
     async function createRoom() {
       if (
-        validateTelephone(Number(editedItem.value.telephone)) ||
-        validateNumber(editedItem.value.number, editedItem.value.id)
+        validateTelephone(newRoom.value.telephone) ||
+        validateNumber(newRoom.value.number, editedItem.value.id)
       )
         return;
       //@ts-ignore

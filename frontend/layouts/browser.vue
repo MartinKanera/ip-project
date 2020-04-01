@@ -100,7 +100,8 @@
                   required
                   :rules="
                       [
-                        v => !!v || 'New password is required'
+                        v => !!v || 'New password is required',
+                        v => v.length >= 6 || 'Min 6 chars no whitespaces'
                       ]"
                 ></v-text-field>
               </v-col>
@@ -185,7 +186,7 @@ export default defineComponent({
           try {
             chagePasswordOverlay.value = true;
 
-            await axios({
+            const response = await axios({
               method: 'POST',
               url: process.env.API_URL + '/api/auth/new-password.php',
               data: {
